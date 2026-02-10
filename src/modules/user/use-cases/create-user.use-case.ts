@@ -40,7 +40,9 @@ export class CreateUserUseCase {
       );
     }
 
-    const hashedPassword = await this.cryptographyService.hash(data.password);
+    const hashedPassword = await this.cryptographyService.hash(
+      data.taxIdentifier,
+    );
 
     const newUser = await this.userRepository.create({
       ...data,

@@ -32,6 +32,17 @@ model User {
   @@map("users")
 }
 
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  email     String
+  used      Boolean  @default(false)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
+}
+
 enum Role {
   ADMIN
   TECHNICIAN

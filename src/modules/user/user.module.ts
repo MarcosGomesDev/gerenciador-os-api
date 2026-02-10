@@ -31,9 +31,11 @@ import { UserController } from './user.controller';
     },
   ],
   exports: [
+    FindUserByIdUseCase,
     FindUserByEmailUseCase,
     FindUserByTaxIdentifierUseCase,
     CreateUserUseCase,
+    UpdateUserUseCase,
     UserRepository,
     {
       provide: 'UserRepository',

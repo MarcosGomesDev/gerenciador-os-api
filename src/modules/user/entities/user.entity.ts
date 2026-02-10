@@ -6,7 +6,7 @@ export class User {
     public readonly id: string,
     public name: string,
     public email: string,
-    public taxIdentifier: number,
+    public taxIdentifier: string,
     public password: string,
     public role: Role,
     public department: Department,

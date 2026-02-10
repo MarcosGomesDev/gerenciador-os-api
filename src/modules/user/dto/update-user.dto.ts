@@ -1,5 +1,6 @@
 import { Sanitize } from '@common/decorators';
 import {
+  IsBoolean,
   IsEmail,
   IsEnum,
   IsOptional,
@@ -42,4 +43,8 @@ export class UpdateUserDTO {
   @IsOptional()
   @IsEnum(departments, { message: 'Departamento inválido' })
   department?: Department;
+
+  @IsOptional()
+  @IsBoolean()
+  isFirstAccess?: boolean;
 }

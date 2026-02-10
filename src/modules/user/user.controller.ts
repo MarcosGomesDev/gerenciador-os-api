@@ -20,7 +20,7 @@ export class UserController {
     private readonly deleteUserUseCase: DeleteUserUseCase,
   ) {}
 
-  @Roles('admin')
+  @Roles('ADMIN')
   @Get()
   async getList() {
     return await this.findAllUsersUseCase.execute();
@@ -35,7 +35,7 @@ export class UserController {
     return user;
   }
 
-  @Roles('admin')
+  @Roles('ADMIN')
   @Get('/:id')
   async findById(@Param('id') id: string) {
     const user = await this.findUserByIdUseCase.execute(id);
@@ -54,7 +54,7 @@ export class UserController {
     await this.updateUserUseCase.execute(id, dto, userId);
   }
 
-  @Roles('admin')
+  @Roles('ADMIN')
   @Delete('/:id')
   async delete(@Param('id') id: string) {
     return await this.deleteUserUseCase.execute(id);

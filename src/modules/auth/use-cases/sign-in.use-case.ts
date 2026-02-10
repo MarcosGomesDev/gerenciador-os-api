@@ -78,7 +78,6 @@ export class SignInUseCase {
     const jti = generateId();
     const payload = {
       id: user.id,
-      email: user.email,
       role: user.role,
       jti,
     };
@@ -91,7 +90,7 @@ export class SignInUseCase {
 
   private generateRefreshToken(user: User): string {
     const jti = generateId();
-    const payload = { id: user.id, email: user.email, role: user.role, jti };
+    const payload = { id: user.id, role: user.role, jti };
     const options: JwtSignOptions = {
       expiresIn: this.configService.get('jwt.refreshExpires'),
       secret: this.configService.get('jwt.refreshSecret'),

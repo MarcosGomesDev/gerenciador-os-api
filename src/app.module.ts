@@ -17,6 +17,8 @@ import { HealthModule } from '@infrastructure/health';
 import { JwtModule } from '@infrastructure/jwt';
 import { UserModule } from '@modules/user';
 import { AuthModule } from '@modules/auth';
+import { MailModule } from '@infrastructure/providers';
+import { TokenPasswordModule } from '@modules/token-password';
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import { AuthModule } from '@modules/auth';
     CircuitBreakerModule,
     MetricsModule,
     CryptographyModule,
+    MailModule,
     PrismaModule,
     SecurityModule,
     ThrottlerConfigModule,
@@ -32,6 +35,7 @@ import { AuthModule } from '@modules/auth';
     JwtModule,
     AuthModule,
     UserModule,
+    TokenPasswordModule,
   ],
   controllers: [AppController],
   providers: [
@@ -41,6 +45,10 @@ import { AuthModule } from '@modules/auth';
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
     {
       provide: APP_GUARD,

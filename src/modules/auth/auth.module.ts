@@ -1,12 +1,29 @@
 import { UserModule } from '@modules/user';
 import { Module } from '@nestjs/common';
-import { SignInUseCase, SignUpUseCase } from './use-cases';
+import {
+  FirstAccessUserUseCase,
+  ForgotPasswordUseCase,
+  LogoutUserUseCase,
+  RefreshTokenUseCase,
+  ResetPasswordUseCase,
+  SignInUseCase,
+  SignUpUseCase,
+} from './use-cases';
 import { AuthController } from './auth.controller';
+import { TokenPasswordModule } from '@modules/token-password';
 
 @Module({
-  imports: [UserModule],
+  imports: [UserModule, TokenPasswordModule],
   controllers: [AuthController],
-  providers: [SignInUseCase, SignUpUseCase],
+  providers: [
+    SignInUseCase,
+    SignUpUseCase,
+    LogoutUserUseCase,
+    ForgotPasswordUseCase,
+    ResetPasswordUseCase,
+    RefreshTokenUseCase,
+    FirstAccessUserUseCase,
+  ],
   exports: [],
 })
 export class AuthModule {}

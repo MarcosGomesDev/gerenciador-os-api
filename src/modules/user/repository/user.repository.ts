@@ -36,6 +36,7 @@ export class UserRepository {
           password: true,
           role: true,
           department: true,
+          isActive: true,
           isFirstAccess: true,
         },
       });
@@ -58,6 +59,7 @@ export class UserRepository {
           id: true,
           name: true,
           email: true,
+          role: true,
           taxIdentifier: true,
           password: true,
         },
@@ -81,6 +83,7 @@ export class UserRepository {
           id: true,
           name: true,
           email: true,
+          role: true,
           taxIdentifier: true,
           password: true,
         },
@@ -113,7 +116,7 @@ export class UserRepository {
     }
   }
 
-  async create(data: CreateUserDTO) {
+  async create(data: CreateUserDTO & { password: string }) {
     try {
       return await this.prisma.user.create({
         data: {
