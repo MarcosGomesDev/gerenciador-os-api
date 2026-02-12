@@ -16,12 +16,13 @@ import { MailService } from './mail.service';
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS,
           },
+          secure: true,
         },
         defaults: {
-          from: '"Suporte" <example@test-r83ql3pnox0gzw1j.mlsender.net>',
+          from: `"Prefeitura de Belford Roxo" <${process.env.SMTP_FROM}>`,
         },
         template: {
-          dir: join(process.cwd(), 'templates'),
+          dir: join(__dirname, 'templates'),
           adapter: new PugAdapter(),
           options: { strict: true },
         },

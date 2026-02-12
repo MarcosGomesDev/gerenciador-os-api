@@ -11,6 +11,7 @@ import compress from 'compression';
 import { json, RequestHandler } from 'express';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
+import { join } from 'path';
 
 async function bootstrap() {
   if (process.env.NODE_ENV !== 'prod') {
@@ -20,6 +21,11 @@ async function bootstrap() {
   if (process.env.NODE_ENV !== 'prod') {
     console.log('[bootstrap] AppModule criado, configurando middlewares...');
   }
+
+  app.setViewEngine('pug');
+  app.setBaseViewsDir(
+    join(__dirname, 'infrastructure', 'providers', 'mail', 'templates'),
+  );
 
   app.use((cookieParser as unknown as () => RequestHandler)());
   app.use(json({ limit: '10mb' }));
