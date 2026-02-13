@@ -7,6 +7,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { Role } from 'types/role';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -15,40 +16,49 @@ export class RolesGuard implements CanActivate {
     private securityLogger: SecurityLoggerService,
   ) {}
 
+  private readonly roleHierarchy: Record<Role, number> = {
+    ADMIN: 3,
+    TECHNICIAN: 2,
+    DEPARTMENT: 1,
+  };
+
   canActivate(context: ExecutionContext): boolean {
     const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    if (isPublic) {
-      return true;
-    }
+    if (isPublic) return true;
 
-    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
-      ROLES_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
-    if (!requiredRoles || requiredRoles.length === 0) return true;
+    if (!requiredRoles?.length) return true;
 
     const request = context.switchToHttp().getRequest();
-
     const { user } = request;
-    const ip = request.ip || request.connection?.remoteAddress || 'unknown';
-    const userAgent = request.get('user-agent') || 'unknown';
-    const endpoint = request.url;
-    const method = request.method;
 
-    if (!user || !requiredRoles.includes(user.role)) {
+    if (!user) {
+      throw new ForbiddenException('Usuário não autenticado.');
+    }
+
+    const hasPermission = requiredRoles.some(
+      (requiredRole) =>
+        this.roleHierarchy[user.role] >= this.roleHierarchy[requiredRole],
+    );
+
+    if (!hasPermission) {
       this.securityLogger.logForbiddenAccess(
-        user?.id || 'unknown',
-        endpoint,
-        method,
-        ip,
+        user.id,
+        request.url,
+        request.method,
+        request.ip || 'unknown',
         requiredRoles.join(', '),
-        userAgent,
+        request.get('user-agent') || 'unknown',
       );
+
       throw new ForbiddenException('Acesso negado: Permissão insuficiente.');
     }
 
