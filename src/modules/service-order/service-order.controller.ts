@@ -10,8 +10,12 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CreateServiceOrderDTO, UpdateServiceOrderDTO } from './dto';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import {
+  CreateServiceOrderDTO,
+  CreateServiceOrderWithFileDTO,
+  UpdateServiceOrderDTO,
+} from './dto';
 import {
   CreateServiceOrderUseCase,
   FindAllServiceOrderUseCase,
@@ -41,12 +45,14 @@ export class ServiceOrderController {
   }
 
   @MaxFileSize(1, 3) // 3MB
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreateServiceOrderWithFileDTO })
   @UseInterceptors(FileInterceptor('attachment'))
   @Post()
   async create(
     @Body() createServiceOrderDTO: CreateServiceOrderDTO,
     @UserId() userId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
     return await this.createServiceOrderUseCase.execute(
       createServiceOrderDTO,
@@ -60,7 +66,7 @@ export class ServiceOrderController {
   async update(
     @Param('id') id: string,
     @Body()
-    updateServiceOrderDTO: Omit<UpdateServiceOrderDTO, 'serviceOrderId'>,
+    updateServiceOrderDTO: UpdateServiceOrderDTO,
   ) {
     return await this.updateServiceOrderUseCase.execute(
       id,

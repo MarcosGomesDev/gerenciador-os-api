@@ -10,10 +10,7 @@ export class UpdateServiceOrderUseCase {
     private readonly createServiceOrderStatusUseCase: CreateServiceOrderStatusUseCase,
   ) {}
 
-  async execute(
-    id: string,
-    dto: Omit<UpdateServiceOrderDTO, 'serviceOrderId'>,
-  ): Promise<void> {
+  async execute(id: string, dto: UpdateServiceOrderDTO): Promise<void> {
     await this.findServiceOrderByIdUseCase.execute(id);
 
     await this.createServiceOrderStatusUseCase.execute({

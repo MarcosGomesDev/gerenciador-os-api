@@ -1,4 +1,5 @@
 import { Sanitize } from '@common/decorators';
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsEmail,
@@ -36,10 +37,20 @@ export class UpdateUserDTO {
   )
   password?: string;
 
+  @ApiProperty({
+    enum: Object.values(roles),
+    enumName: 'Role',
+    required: false,
+  })
   @IsOptional()
   @IsEnum(roles, { message: 'Função inválida' })
   role?: Role;
 
+  @ApiProperty({
+    enum: Object.values(departments),
+    enumName: 'Department',
+    required: false,
+  })
   @IsOptional()
   @IsEnum(departments, { message: 'Departamento inválido' })
   department?: Department;
