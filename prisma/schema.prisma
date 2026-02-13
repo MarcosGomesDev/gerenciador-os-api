@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
@@ -15,19 +9,21 @@ datasource db {
 }
 
 model User {
-  id            String     @id @default(uuid())
-  name          String
-  email         String     @unique
-  taxIdentifier String     @unique @map("tax_identifier")
-  password      String
-  role          Role
-  department    Department
-  isActive      Boolean    @default(true) @map("is_active")
-  isFirstAccess Boolean    @default(true) @map("is_first_access")
-  isDeleted     Boolean    @default(false) @map("is_deleted")
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  deletedAt     DateTime?  @map("deleted_at")
+  id                   String               @id @default(uuid())
+  name                 String
+  email                String               @unique
+  taxIdentifier        String               @unique @map("tax_identifier")
+  password             String
+  role                 Role
+  department           Department
+  isActive             Boolean              @default(true) @map("is_active")
+  isFirstAccess        Boolean              @default(true) @map("is_first_access")
+  isDeleted            Boolean              @default(false) @map("is_deleted")
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  deletedAt            DateTime?            @map("deleted_at")
+  serviceOrders        ServiceOrder[]
+  serviceOrderStatuses ServiceOrderStatus[]
 
   @@map("users")
 }
@@ -41,6 +37,54 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@map("password_reset_tokens")
+}
+
+model ServiceOrder {
+  id                 String               @id @default(uuid())
+  orderId            String               @unique @map("order_id")
+  subject            String               @map("subject")
+  description        String               @map("description")
+  type               ServiceOrderType     @map("type")
+  department         Department
+  requester          User                 @relation(fields: [requesterId], references: [id])
+  requesterId        String               @map("requester_id")
+  priority           OrderPriority
+  serviceOrderStatus ServiceOrderStatus[]
+  attachment         String?              @map("attachment")
+  createdAt          DateTime             @default(now())
+}
+
+model ServiceOrderStatus {
+  id             String       @id @default(uuid())
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+  serviceOrderId String       @map("service_order_id")
+  status         OrderStatus
+  note           String?      @map("note")
+  technician     User?        @relation(fields: [technicianId], references: [id])
+  technicianId   String?      @map("technician_id")
+  createdAt      DateTime     @default(now())
+}
+
+enum OrderPriority {
+  URGENT
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ServiceOrderType {
+  TI
+  MAINTENANCE
+  SYSTEM
+  NETWORK
+  INFRASTRUCTURE
+  OTHER
+}
+
+enum OrderStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
 }
 
 enum Role {

@@ -1,17 +1,17 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { HttpExceptionFilter } from '@common/filters';
 import { getEnv } from '@infrastructure/config';
+import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
-import { HttpExceptionFilter } from '@common/filters';
-import { ValidationPipe } from '@nestjs/common';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import compress from 'compression';
-import { json, RequestHandler } from 'express';
-import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
+import { json, RequestHandler } from 'express';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 import { join } from 'path';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   if (process.env.NODE_ENV !== 'prod') {
@@ -28,7 +28,7 @@ async function bootstrap() {
   );
 
   app.use((cookieParser as unknown as () => RequestHandler)());
-  app.use(json({ limit: '10mb' }));
+  app.use(json({ limit: '3mb' }));
   app.set('trust proxy', 1);
   app.set('query parser', 'extended');
 
