@@ -2,6 +2,7 @@ import {
   CircuitBreakerOpenException,
   TimeoutError,
 } from '@infrastructure/circuit-breaker';
+import { LoggerService } from '@infrastructure/log';
 import {
   ArgumentsHost,
   Catch,
@@ -23,6 +24,8 @@ type ErrorResponse = {
 @Catch(HttpException, CircuitBreakerOpenException, TimeoutError)
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
+
+  constructor(private readonly loggerService: LoggerService) {}
 
   /**
    * Lista de campos sensíveis que devem ser sanitizados
@@ -79,6 +82,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
         `Circuit breaker OPEN for ${exception.key}. Retry after ${retryAfter}s`,
         { requestId },
       );
+      void this.loggerService.warn(
+        `Circuit breaker OPEN for ${exception.key}. Retry after ${retryAfter}s`,
+        { requestId, path: request.url, method: request.method },
+      );
       return;
     }
 
@@ -93,6 +100,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
       this.logger.warn(`Timeout error for circuit breaker ${exception.key}`, {
         requestId,
       });
+      void this.loggerService.warn(
+        `Timeout error for circuit breaker ${exception.key}`,
+        { requestId, path: request.url, method: request.method },
+      );
       return;
     }
 
@@ -134,6 +145,26 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     // Garantir que a mensagem de erro não contenha dados sensíveis
     const sanitizedMessage = this.sanitizeMessage(message);
+
+    // Persistir na tabela de logs (produção): ERROR para 5xx, WARNING para 4xx
+    const logContext = {
+      requestId,
+      path: request.url,
+      method: request.method,
+      statusCode: status,
+      message: sanitizedMessage,
+    };
+    if (status >= 500) {
+      void this.loggerService.error(
+        `HTTP ${status}: ${sanitizedMessage}`,
+        logContext,
+      );
+    } else {
+      void this.loggerService.warn(
+        `HTTP ${status}: ${sanitizedMessage}`,
+        logContext,
+      );
+    }
 
     // Adiciona header para indicar que o token expirou e o frontend deve fazer refresh
     if (exception instanceof TokenExpiredException) {

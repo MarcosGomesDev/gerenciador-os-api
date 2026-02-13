@@ -1,4 +1,3 @@
-import { HttpExceptionFilter } from '@common/filters';
 import { getEnv } from '@infrastructure/config';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
@@ -132,8 +131,6 @@ async function bootstrap() {
       validateCustomDecorators: true,
     }),
   );
-
-  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Helmet DEPOIS do CORS e global prefix
   app.use(

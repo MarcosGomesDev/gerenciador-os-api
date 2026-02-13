@@ -4,6 +4,7 @@ import { ConfigModule } from '@infrastructure/config';
 import { CryptographyModule } from '@infrastructure/criptography';
 import { HealthModule } from '@infrastructure/health';
 import { JwtModule } from '@infrastructure/jwt';
+import { LogModule } from '@infrastructure/log';
 import { MetricsInterceptor, MetricsModule } from '@infrastructure/metrics';
 import { PrismaModule } from '@infrastructure/prisma';
 import { MailModule, StorageModule } from '@infrastructure/providers';
@@ -15,16 +16,18 @@ import { ServiceOrderStatusModule } from '@modules/service-order-status';
 import { TokenPasswordModule } from '@modules/token-password';
 import { UserModule } from '@modules/user';
 import { Module } from '@nestjs/common';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthGuard, RolesGuard } from './common/guards';
+import { HttpExceptionFilter } from './common/filters';
 import { RequestIdInterceptor } from './common/interceptors';
 
 @Module({
   imports: [
     ConfigModule,
+    LogModule,
     CacheModule,
     CircuitBreakerModule,
     MetricsModule,
@@ -47,6 +50,10 @@ import { RequestIdInterceptor } from './common/interceptors';
     AppService,
     AuthGuard,
     RolesGuard,
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

@@ -1,3 +1,4 @@
+import { LoggerService } from '@infrastructure/log';
 import { PrismaService } from '@infrastructure/prisma';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreateUserDTO, UpdateUserDTO } from '../dto';
@@ -5,7 +6,10 @@ import { generateId } from '@common/utils';
 
 @Injectable()
 export class UserRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly logger: LoggerService,
+  ) {}
 
   async findAll() {
     try {
@@ -20,6 +24,9 @@ export class UserRepository {
         },
       });
     } catch (error) {
+      void this.logger.error('UserRepository.findAll falhou', {
+        error: String(error),
+      });
       throw new InternalServerErrorException(error);
     }
   }
@@ -47,6 +54,10 @@ export class UserRepository {
 
       return user;
     } catch (error) {
+      void this.logger.error('UserRepository.findById falhou', {
+        id,
+        error: String(error),
+      });
       throw new InternalServerErrorException(error);
     }
   }
@@ -71,6 +82,10 @@ export class UserRepository {
 
       return user;
     } catch (error) {
+      void this.logger.error('UserRepository.findByEmail falhou', {
+        email,
+        error: String(error),
+      });
       throw new InternalServerErrorException(error);
     }
   }
@@ -95,6 +110,10 @@ export class UserRepository {
 
       return user;
     } catch (error) {
+      void this.logger.error('UserRepository.findByTaxIdentifier falhou', {
+        taxIdentifier,
+        error: String(error),
+      });
       throw new InternalServerErrorException(error);
     }
   }
@@ -112,13 +131,17 @@ export class UserRepository {
 
       return user.role;
     } catch (error) {
+      void this.logger.error('UserRepository.findRoleByUserId falhou', {
+        userId,
+        error: String(error),
+      });
       throw new InternalServerErrorException(error);
     }
   }
 
   async create(data: CreateUserDTO & { password: string }) {
     try {
-      return await this.prisma.user.create({
+      const user = await this.prisma.user.create({
         data: {
           id: generateId(),
           ...data,
@@ -126,7 +149,16 @@ export class UserRepository {
           isFirstAccess: true,
         },
       });
+      void this.logger.info('Usuário criado', {
+        userId: user.id,
+        email: user.email,
+      });
+      return user;
     } catch (error) {
+      void this.logger.error('UserRepository.create falhou', {
+        email: data.email,
+        error: String(error),
+      });
       throw new InternalServerErrorException(error);
     }
   }
@@ -137,7 +169,12 @@ export class UserRepository {
         where: { id },
         data,
       });
+      void this.logger.info('Usuário atualizado', { userId: id });
     } catch (error) {
+      void this.logger.error('UserRepository.update falhou', {
+        userId: id,
+        error: String(error),
+      });
       throw new InternalServerErrorException(error);
     }
   }
@@ -152,7 +189,12 @@ export class UserRepository {
           deletedAt: new Date(),
         },
       });
+      void this.logger.info('Usuário excluído (soft delete)', { userId: id });
     } catch (error) {
+      void this.logger.error('UserRepository.delete falhou', {
+        userId: id,
+        error: String(error),
+      });
       throw new InternalServerErrorException(error);
     }
   }

@@ -1,3 +1,4 @@
+import { LoggerService } from '@infrastructure/log';
 import { PrismaService } from '@infrastructure/prisma';
 import { Injectable } from '@nestjs/common';
 import { CreateServiceOrderDTO } from '../dto';
@@ -8,7 +9,10 @@ import { ServiceOrder } from '../entities';
 
 @Injectable()
 export class ServiceOrderRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly logger: LoggerService,
+  ) {}
 
   async findAll(): Promise<ServiceOrder[]> {
     try {
@@ -51,7 +55,9 @@ export class ServiceOrderRepository {
         },
       });
     } catch (error) {
-      console.error(error);
+      void this.logger.error('ServiceOrderRepository.findAll falhou', {
+        error: String(error),
+      });
       throw new BadRequestException(
         'Erro ao buscar ordens de serviço: ' + error.message,
       );
@@ -99,7 +105,10 @@ export class ServiceOrderRepository {
         },
       });
     } catch (error) {
-      console.error(error);
+      void this.logger.error('ServiceOrderRepository.findById falhou', {
+        id,
+        error: String(error),
+      });
       throw new BadRequestException(
         'Erro ao buscar ordem de serviço: ' + error.message,
       );
@@ -147,14 +156,24 @@ export class ServiceOrderRepository {
           },
         });
       });
+      void this.logger.info('Ordem de serviço criada', {
+        orderId,
+        userId,
+      });
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2003'
       ) {
+        void this.logger.warn('ServiceOrderRepository.create: usuário não encontrado', {
+          userId,
+        });
         throw new NotFoundException(userId + ' usuário não encontrado.');
       }
-
+      void this.logger.error('ServiceOrderRepository.create falhou', {
+        userId,
+        error: String(error),
+      });
       throw new BadRequestException(
         'Erro ao criar status da ordem de serviço: ' + error.message,
       );

@@ -93,6 +93,26 @@ enum Role {
   DEPARTMENT
 }
 
+model Log {
+  id        String   @id @default(uuid())
+  level     LogLevel
+  message   String   @map("message")
+  context   Json?    @map("context")
+  requestId String?  @map("request_id")
+  path      String?  @map("path")
+  method    String?  @map("method")
+  userId    String?  @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("logs")
+}
+
+enum LogLevel {
+  INFO
+  WARNING
+  ERROR
+}
+
 enum Department {
   CONTROLADORIA_GERAL_DO_MUNICIPIO
   FUNDACAO_DE_DESENVOLVIMENTO_SOCIAL_DE_BELFORD_ROXO
