@@ -78,13 +78,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
         retryAfter,
       });
       const requestId = (request as any)[REQUEST_ID_KEY];
+      const userId = (request as any).user?.id;
       this.logger.warn(
         `Circuit breaker OPEN for ${exception.key}. Retry after ${retryAfter}s`,
         { requestId },
       );
       void this.loggerService.warn(
         `Circuit breaker OPEN for ${exception.key}. Retry after ${retryAfter}s`,
-        { requestId, path: request.url, method: request.method },
+        { requestId, path: request.url, method: request.method, userId },
       );
       return;
     }
@@ -97,12 +98,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message: 'A operação excedeu o tempo limite. Tente novamente.',
       });
       const requestId = (request as any)[REQUEST_ID_KEY];
+      const userId = (request as any).user?.id;
       this.logger.warn(`Timeout error for circuit breaker ${exception.key}`, {
         requestId,
       });
       void this.loggerService.warn(
         `Timeout error for circuit breaker ${exception.key}`,
-        { requestId, path: request.url, method: request.method },
+        { requestId, path: request.url, method: request.method, userId },
       );
       return;
     }
@@ -119,13 +121,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // Sanitizar dados sensíveis do request para logging
     const sanitizedRequest = this.sanitizeRequest(request);
 
-    // Obtém o Request ID se disponível
+    // Obtém o Request ID e User ID se disponíveis
     const requestId = (request as any)[REQUEST_ID_KEY];
+    const userId = (request as any).user?.id;
 
     // Log apenas em desenvolvimento ou com dados sanitizados
     if (process.env.NODE_ENV === 'dev') {
       this.logger.debug('HTTP Exception', {
         requestId,
+        userId,
         statusCode: status,
         path: request.url,
         method: request.method,
@@ -136,6 +140,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       // Em produção, log apenas informações essenciais
       this.logger.warn('HTTP Exception', {
         requestId,
+        userId,
         statusCode: status,
         path: request.url,
         method: request.method,
@@ -149,6 +154,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // Persistir na tabela de logs (produção): ERROR para 5xx, WARNING para 4xx
     const logContext = {
       requestId,
+      userId,
       path: request.url,
       method: request.method,
       statusCode: status,
@@ -239,23 +245,38 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   /**
    * Sanitiza a mensagem de erro para garantir que não contenha dados sensíveis
+   * Preserva mensagens de erro legítimas que apenas mencionam termos sensíveis,
+   * mas sanitiza quando há dados sensíveis reais sendo expostos
    */
   private sanitizeMessage(message: string): string {
     if (!message || typeof message !== 'string') {
       return message;
     }
 
-    // Verificar se a mensagem contém algum campo sensível
-    const lowerMessage = message.toLowerCase();
-    const containsSensitive = this.sensitiveFields.some((field) =>
-      lowerMessage.includes(field.toLowerCase()),
+    // Padrões que indicam dados sensíveis reais (não apenas menções)
+    const sensitivePatterns = [
+      // JWT tokens (começam com eyJ)
+      /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/,
+      // Tokens longos (mais de 20 caracteres alfanuméricos)
+      /\b[a-zA-Z0-9]{30,}\b/,
+      // Padrões de senha/token com valor (ex: "password: abc123" ou "token=xyz")
+      /\b(password|token|secret|apikey|api_key|authorization|jwt)\s*[:=]\s*['"]?[^\s'"]{10,}['"]?/i,
+      // Emails com senhas (ex: "password: senha123")
+      /\b(password|senha)\s*[:=]\s*['"]?[^\s'"]{6,}['"]?/i,
+    ];
+
+    // Verificar se há dados sensíveis reais sendo expostos
+    const containsSensitiveData = sensitivePatterns.some((pattern) =>
+      pattern.test(message),
     );
 
-    if (containsSensitive) {
-      // Se contiver dados sensíveis, retornar mensagem genérica
+    if (containsSensitiveData) {
+      // Se contiver dados sensíveis reais, retornar mensagem genérica
       return 'Ocorreu um erro ao processar a requisição';
     }
 
+    // Mensagens que apenas mencionam termos sensíveis são preservadas
+    // Exemplos válidos: "Token inválido", "Authentication required", "Token foi revogado"
     return message;
   }
 }

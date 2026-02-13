@@ -22,7 +22,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthGuard, RolesGuard } from './common/guards';
 import { HttpExceptionFilter } from './common/filters';
-import { RequestIdInterceptor } from './common/interceptors';
 
 @Module({
   imports: [
@@ -69,10 +68,6 @@ import { RequestIdInterceptor } from './common/interceptors';
     {
       provide: APP_INTERCEPTOR,
       useClass: MetricsInterceptor,
-    },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: RequestIdInterceptor,
     },
   ],
 })

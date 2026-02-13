@@ -1,3 +1,4 @@
+import { requestIdMiddleware } from '@common/middleware/request-id.middleware';
 import { getEnv } from '@infrastructure/config';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
@@ -28,6 +29,7 @@ async function bootstrap() {
 
   app.use((cookieParser as unknown as () => RequestHandler)());
   app.use(json({ limit: '3mb' }));
+  app.use(requestIdMiddleware);
   app.set('trust proxy', 1);
   app.set('query parser', 'extended');
 
