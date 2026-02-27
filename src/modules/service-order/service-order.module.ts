@@ -6,6 +6,8 @@ import {
   CreateServiceOrderUseCase,
   FindAllServiceOrderUseCase,
   FindServiceOrderByIdUseCase,
+  GetDashboardSummaryUseCase,
+  GetSummaryChartsUseCase,
   UpdateServiceOrderUseCase,
 } from './use-cases';
 
@@ -15,6 +17,8 @@ import {
   providers: [
     FindAllServiceOrderUseCase,
     FindServiceOrderByIdUseCase,
+    GetDashboardSummaryUseCase,
+    GetSummaryChartsUseCase,
     CreateServiceOrderUseCase,
     UpdateServiceOrderUseCase,
     ServiceOrderRepository,

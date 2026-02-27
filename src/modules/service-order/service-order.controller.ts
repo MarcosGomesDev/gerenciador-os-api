@@ -6,11 +6,13 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ServiceOrderPriority, ServiceOrderStatus } from 'types/service-order';
 import {
   CreateServiceOrderDTO,
   CreateServiceOrderWithFileDTO,
@@ -20,6 +22,8 @@ import {
   CreateServiceOrderUseCase,
   FindAllServiceOrderUseCase,
   FindServiceOrderByIdUseCase,
+  GetDashboardSummaryUseCase,
+  GetSummaryChartsUseCase,
   UpdateServiceOrderUseCase,
 } from './use-cases';
 
@@ -28,15 +32,47 @@ import {
 @Controller('service-orders')
 export class ServiceOrderController {
   constructor(
-    private readonly createServiceOrderUseCase: CreateServiceOrderUseCase,
     private readonly findAllServiceOrderUseCase: FindAllServiceOrderUseCase,
     private readonly findServiceOrderByIdUseCase: FindServiceOrderByIdUseCase,
+    private readonly getDashboardSummaryUseCase: GetDashboardSummaryUseCase,
+    private readonly getSummaryChartsUseCase: GetSummaryChartsUseCase,
+    private readonly createServiceOrderUseCase: CreateServiceOrderUseCase,
     private readonly updateServiceOrderUseCase: UpdateServiceOrderUseCase,
   ) {}
 
   @Get()
-  async findAll() {
-    return await this.findAllServiceOrderUseCase.execute();
+  async findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('orderId') orderId?: string,
+    @Query('department') department?: string,
+    @Query('requesterName') requesterName?: string,
+    @Query('priority') priority?: ServiceOrderPriority,
+    @Query('technicianName') technicianName?: string,
+    @Query('subject') subject?: string,
+    @Query('status') status?: ServiceOrderStatus,
+  ) {
+    return await this.findAllServiceOrderUseCase.execute({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      orderId,
+      department,
+      requesterName,
+      priority,
+      technicianName,
+      subject,
+      status,
+    });
+  }
+
+  @Get('/dashboard-summary')
+  async getDashboardSummary() {
+    return await this.getDashboardSummaryUseCase.execute();
+  }
+
+  @Get('/summary-charts')
+  async getSummaryCharts() {
+    return await this.getSummaryChartsUseCase.execute();
   }
 
   @Get('/:id')

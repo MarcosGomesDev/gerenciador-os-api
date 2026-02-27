@@ -1,8 +1,9 @@
+import { generateId } from '@common/utils';
 import { LoggerService } from '@infrastructure/log';
 import { PrismaService } from '@infrastructure/prisma';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { CreateUserDTO, UpdateUserDTO } from '../dto';
-import { generateId } from '@common/utils';
+import { CreateUserDTO, FindAllUsersFilters, UpdateUserDTO } from '../dto';
+import { ListUser } from '../entities';
 
 @Injectable()
 export class UserRepository {
@@ -11,18 +12,48 @@ export class UserRepository {
     private readonly logger: LoggerService,
   ) {}
 
-  async findAll() {
+  async findAll(filters: FindAllUsersFilters = {}): Promise<{
+    data: ListUser[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     try {
-      return await this.prisma.user.findMany({
-        where: { isDeleted: false },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          department: true,
-        },
-      });
+      const { page = 1, limit = 10, name, email } = filters;
+      const skip = (page - 1) * limit;
+
+      const where = {
+        isDeleted: false,
+        ...(name && { name: { contains: name, mode: 'insensitive' as const } }),
+        ...(email && {
+          email: { contains: email, mode: 'insensitive' as const },
+        }),
+      };
+
+      const [data, total] = await Promise.all([
+        this.prisma.user.findMany({
+          where,
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            department: true,
+            isActive: true,
+          },
+          skip,
+          take: limit,
+          orderBy: { name: 'asc' },
+        }),
+        this.prisma.user.count({ where }),
+      ]);
+
+      return {
+        data,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       void this.logger.error('UserRepository.findAll falhou', {
         error: String(error),

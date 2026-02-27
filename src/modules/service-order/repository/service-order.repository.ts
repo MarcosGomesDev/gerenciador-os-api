@@ -1,10 +1,11 @@
+import { BadRequestException, NotFoundException } from '@common/filters';
+import { generateId } from '@common/utils';
 import { LoggerService } from '@infrastructure/log';
 import { PrismaService } from '@infrastructure/prisma';
 import { Injectable } from '@nestjs/common';
-import { CreateServiceOrderDTO } from '../dto';
-import { generateId } from '@common/utils';
 import { Prisma } from '@prisma/client';
-import { BadRequestException, NotFoundException } from '@common/filters';
+import { Department } from 'types/department';
+import { CreateServiceOrderDTO, FindAllFilters } from '../dto';
 import { ServiceOrder } from '../entities';
 
 @Injectable()
@@ -14,46 +15,106 @@ export class ServiceOrderRepository {
     private readonly logger: LoggerService,
   ) {}
 
-  async findAll(): Promise<ServiceOrder[]> {
+  async findAll(filters: FindAllFilters = {}): Promise<{
+    data: ServiceOrder[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     try {
-      return await this.prisma.serviceOrder.findMany({
-        select: {
-          id: true,
-          orderId: true,
-          subject: true,
-          description: true,
-          type: true,
-          department: true,
-          priority: true,
-          attachment: true,
-          createdAt: true,
+      const {
+        page = 1,
+        limit = 10,
+        orderId,
+        department,
+        requesterName,
+        priority,
+        technicianName,
+        subject,
+        status,
+      } = filters;
+
+      const skip = (page - 1) * limit;
+
+      const where = {
+        ...(orderId && {
+          orderId: { contains: orderId, mode: 'insensitive' as const },
+        }),
+        ...(department && { department: department as Department }),
+        ...(priority && { priority }),
+        ...(subject && {
+          subject: { contains: subject, mode: 'insensitive' as const },
+        }),
+        ...(requesterName && {
           requester: {
-            select: {
-              id: true,
-              name: true,
-            },
+            name: { contains: requesterName, mode: 'insensitive' as const },
           },
-          serviceOrderStatus: {
-            select: {
-              id: true,
-              status: true,
-              serviceOrderId: true,
-              note: true,
-              createdAt: true,
-              technician: {
-                select: {
-                  id: true,
-                  name: true,
+        }),
+        ...(status || technicianName
+          ? {
+              serviceOrderStatus: {
+                some: {
+                  ...(status && { status }),
+                  ...(technicianName && {
+                    technician: {
+                      name: {
+                        contains: technicianName,
+                        mode: 'insensitive' as const,
+                      },
+                    },
+                  }),
                 },
               },
-            },
-            orderBy: {
-              createdAt: 'desc',
-            },
-            take: 1,
-          },
+            }
+          : {}),
+      };
+
+      const select = {
+        id: true,
+        orderId: true,
+        subject: true,
+        description: true,
+        type: true,
+        department: true,
+        priority: true,
+        attachment: true,
+        createdAt: true,
+        requester: {
+          select: { id: true, name: true },
         },
-      });
+        serviceOrderStatus: {
+          select: {
+            id: true,
+            status: true,
+            serviceOrderId: true,
+            note: true,
+            createdAt: true,
+            technician: {
+              select: { id: true, name: true },
+            },
+          },
+          orderBy: { createdAt: 'desc' as const },
+          take: 1,
+        },
+      };
+
+      const [data, total] = await Promise.all([
+        this.prisma.serviceOrder.findMany({
+          where,
+          select,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.serviceOrder.count({ where }),
+      ]);
+
+      return {
+        data,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       void this.logger.error('ServiceOrderRepository.findAll falhou', {
         error: String(error),
@@ -62,6 +123,265 @@ export class ServiceOrderRepository {
         'Erro ao buscar ordens de serviço: ' + error.message,
       );
     }
+  }
+
+  async getDashboardSummary(): Promise<{
+    totalOrders: {
+      total: number;
+      percentage: number;
+    };
+    byStatus: {
+      open: number;
+      inProgress: number;
+      closed: { total: number; percentage: number };
+    };
+    avgResolutionOrders: number;
+    avgResolutionTime: {
+      hours: number;
+      percentage: number;
+    };
+  }> {
+    const now = new Date();
+
+    const startCurrentPeriod = new Date(now);
+    startCurrentPeriod.setDate(now.getDate() - 30);
+
+    const startPreviousPeriod = new Date(now);
+    startPreviousPeriod.setDate(now.getDate() - 60);
+
+    const currentDateFilter = { gte: startCurrentPeriod, lte: now };
+    const previousDateFilter = {
+      gte: startPreviousPeriod,
+      lte: startCurrentPeriod,
+    };
+
+    const [
+      currentOrders,
+      previousOrders,
+      totalPreviousClosedOrders,
+      closedOrdersWithHistory,
+      previousClosedOrdersWithHistory,
+    ] = await Promise.all([
+      this.prisma.serviceOrder.findMany({
+        where: { createdAt: currentDateFilter },
+        include: {
+          serviceOrderStatus: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+      }),
+
+      this.prisma.serviceOrder.count({
+        where: { createdAt: previousDateFilter },
+      }),
+
+      this.prisma.serviceOrder.count({
+        where: {
+          createdAt: previousDateFilter,
+          serviceOrderStatus: { some: { status: 'CLOSED' } },
+        },
+      }),
+
+      // Ordens fechadas no período atual com histórico completo de status
+      this.prisma.serviceOrder.findMany({
+        where: {
+          createdAt: currentDateFilter,
+          serviceOrderStatus: { some: { status: 'CLOSED' } },
+        },
+        include: {
+          serviceOrderStatus: {
+            where: { status: { in: ['OPEN', 'CLOSED'] } },
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+      }),
+
+      // Ordens fechadas no período anterior com histórico completo de status
+      this.prisma.serviceOrder.findMany({
+        where: {
+          createdAt: previousDateFilter,
+          serviceOrderStatus: { some: { status: 'CLOSED' } },
+        },
+        include: {
+          serviceOrderStatus: {
+            where: { status: { in: ['OPEN', 'CLOSED'] } },
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+      }),
+    ]);
+
+    const calcAvgResolutionInHours = (
+      orders: typeof closedOrdersWithHistory,
+    ) => {
+      const resolutionTimes = orders
+        .map((order) => {
+          const openStatus = order.serviceOrderStatus.find(
+            (s) => s.status === 'OPEN',
+          );
+          const closedStatus = order.serviceOrderStatus.find(
+            (s) => s.status === 'CLOSED',
+          );
+
+          if (!openStatus || !closedStatus) return null;
+
+          const diffMs =
+            closedStatus.createdAt.getTime() - openStatus.createdAt.getTime();
+          return diffMs / (1000 * 60 * 60); // converte para horas
+        })
+        .filter((t): t is number => t !== null);
+
+      if (resolutionTimes.length === 0) return 0;
+
+      const avg =
+        resolutionTimes.reduce((sum, t) => sum + t, 0) / resolutionTimes.length;
+      return Number(avg.toFixed(1));
+    };
+
+    const getLastStatus = (order: (typeof currentOrders)[0]) =>
+      order.serviceOrderStatus[0]?.status;
+
+    const countByStatus = (orders: typeof currentOrders, status: string) =>
+      orders.filter((o) => getLastStatus(o) === status).length;
+
+    const currentTotal = currentOrders.length;
+    const currentClosed = countByStatus(currentOrders, 'CLOSED');
+
+    const currentAvgResolution = calcAvgResolutionInHours(
+      closedOrdersWithHistory,
+    );
+    const previousAvgResolution = calcAvgResolutionInHours(
+      previousClosedOrdersWithHistory,
+    );
+
+    const avgResolutionOrders =
+      currentTotal > 0
+        ? Number(((currentClosed / currentTotal) * 100).toFixed(2))
+        : 0;
+
+    return {
+      totalOrders: {
+        total: currentTotal,
+        percentage: this.calculatePercentageChange(
+          previousOrders,
+          currentTotal,
+        ),
+      },
+      byStatus: {
+        open: countByStatus(currentOrders, 'OPEN'),
+        inProgress: countByStatus(currentOrders, 'IN_PROGRESS'),
+        closed: {
+          total: currentClosed,
+          percentage: this.calculatePercentageChange(
+            totalPreviousClosedOrders,
+            currentClosed,
+          ),
+        },
+      },
+      avgResolutionOrders,
+      avgResolutionTime: {
+        hours: currentAvgResolution,
+        percentage: this.calculatePercentageChange(
+          previousAvgResolution,
+          currentAvgResolution,
+        ),
+      },
+    };
+  }
+
+  async getSummaryCharts(): Promise<{
+    ordersByDepartment: { department: string; total: number }[];
+    percentageByStatus: { status: string; percentage: number }[];
+    avgResolutionTimeByDepartment: { department: string; avg: number }[];
+  }> {
+    const now = new Date();
+    const startPeriod = new Date(now);
+    startPeriod.setDate(now.getDate() - 30);
+
+    const dateFilter = { gte: startPeriod, lte: now };
+
+    const [ordersByDepartment, statusCounts, closedOrdersWithHistory] =
+      await Promise.all([
+        this.prisma.serviceOrder.groupBy({
+          by: ['department'],
+          where: { createdAt: dateFilter },
+          _count: { department: true },
+        }),
+
+        this.prisma.serviceOrderStatus.groupBy({
+          by: ['status'],
+          where: { createdAt: dateFilter },
+          _count: { status: true },
+        }),
+
+        this.prisma.serviceOrder.findMany({
+          where: {
+            createdAt: dateFilter,
+            serviceOrderStatus: { some: { status: 'CLOSED' } },
+          },
+          select: {
+            department: true,
+            serviceOrderStatus: {
+              where: { status: { in: ['OPEN', 'CLOSED'] } },
+              orderBy: { createdAt: 'asc' },
+              select: { status: true, createdAt: true },
+            },
+          },
+        }),
+      ]);
+
+    // Calcula tempo de resolução por OS e agrupa por departamento
+    const resolutionByDepartment = new Map<string, number[]>();
+
+    for (const order of closedOrdersWithHistory) {
+      const openStatus = order.serviceOrderStatus.find(
+        (s) => s.status === 'OPEN',
+      );
+      const closedStatus = order.serviceOrderStatus.find(
+        (s) => s.status === 'CLOSED',
+      );
+
+      if (!openStatus || !closedStatus) continue;
+
+      const hours =
+        (closedStatus.createdAt.getTime() - openStatus.createdAt.getTime()) /
+        (1000 * 60 * 60);
+
+      const existing = resolutionByDepartment.get(order.department) ?? [];
+      resolutionByDepartment.set(order.department, [...existing, hours]);
+    }
+
+    const avgResolutionTimeByDepartment = Array.from(
+      resolutionByDepartment.entries(),
+    ).map(([department, times]) => ({
+      department,
+      avg: Number(
+        (times.reduce((sum, t) => sum + t, 0) / times.length).toFixed(1),
+      ),
+    }));
+
+    const totalOrders = statusCounts.reduce(
+      (sum, s) => sum + s._count.status,
+      0,
+    );
+
+    return {
+      ordersByDepartment: ordersByDepartment.map((i) => ({
+        department: i.department,
+        total: i._count.department,
+      })),
+
+      percentageByStatus: statusCounts.map((i) => ({
+        status: i.status,
+        percentage:
+          totalOrders > 0
+            ? Number(((i._count.status / totalOrders) * 100).toFixed(2))
+            : 0,
+      })),
+
+      avgResolutionTimeByDepartment,
+    };
   }
 
   async findById(id: string): Promise<ServiceOrder> {
@@ -165,9 +485,12 @@ export class ServiceOrderRepository {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2003'
       ) {
-        void this.logger.warn('ServiceOrderRepository.create: usuário não encontrado', {
-          userId,
-        });
+        void this.logger.warn(
+          'ServiceOrderRepository.create: usuário não encontrado',
+          {
+            userId,
+          },
+        );
         throw new NotFoundException(userId + ' usuário não encontrado.');
       }
       void this.logger.error('ServiceOrderRepository.create falhou', {
@@ -178,5 +501,10 @@ export class ServiceOrderRepository {
         'Erro ao criar status da ordem de serviço: ' + error.message,
       );
     }
+  }
+
+  private calculatePercentageChange(previous: number, current: number): number {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Number((((current - previous) / previous) * 100).toFixed(2));
   }
 }

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ServiceOrderRepository } from '../repository';
+import { FindAllFilters } from '../dto';
 import { ServiceOrder } from '../entities';
+import { ServiceOrderRepository } from '../repository';
 
 @Injectable()
 export class FindAllServiceOrderUseCase {
@@ -9,7 +10,12 @@ export class FindAllServiceOrderUseCase {
     private readonly serviceOrderRepository: ServiceOrderRepository,
   ) {}
 
-  async execute(): Promise<ServiceOrder[]> {
-    return await this.serviceOrderRepository.findAll();
+  async execute(filters: FindAllFilters): Promise<{
+    data: ServiceOrder[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    return await this.serviceOrderRepository.findAll(filters);
   }
 }

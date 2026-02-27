@@ -1,13 +1,21 @@
 import { Roles, UserId } from '@common/decorators';
-import { Body, Controller, Delete, Get, Param, Patch } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { UpdateUserDTO } from './dto';
 import {
   DeleteUserUseCase,
   FindAllUsersUseCase,
   FindUserByIdUseCase,
   UpdateUserUseCase,
 } from './use-cases';
-import { UpdateUserDTO } from './dto';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -22,8 +30,18 @@ export class UserController {
 
   @Roles('ADMIN')
   @Get()
-  async getList() {
-    return await this.findAllUsersUseCase.execute();
+  async getList(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('name') name?: string,
+    @Query('email') email?: string,
+  ) {
+    return await this.findAllUsersUseCase.execute({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      name,
+      email,
+    });
   }
 
   @Get('/me')
