@@ -62,6 +62,28 @@ export class UserRepository {
     }
   }
 
+  async findTechnicians(): Promise<{ id: string; name: string }[]> {
+    try {
+      const technicians = await this.prisma.user.findMany({
+        where: { role: 'TECHNICIAN', isDeleted: false, isActive: true },
+        select: {
+          id: true,
+          name: true,
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+
+      return technicians;
+    } catch (error) {
+      void this.logger.error('UserRepository.findTechnicians falhou', {
+        error: String(error),
+      });
+      throw new InternalServerErrorException(error);
+    }
+  }
+
   async findById(id: string) {
     try {
       const user = await this.prisma.user.findFirst({

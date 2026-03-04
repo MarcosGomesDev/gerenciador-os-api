@@ -1,12 +1,12 @@
 import {
+  CallHandler,
+  ExecutionContext,
   Injectable,
   NestInterceptor,
-  ExecutionContext,
-  CallHandler,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
 import { Request, Response } from 'express';
+import { Observable } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 import { MetricsService } from './metrics.service';
 
 @Injectable()
@@ -63,7 +63,12 @@ export class MetricsInterceptor implements NestInterceptor {
       .split('/')
       .map((segment) => {
         // Se o segmento parece ser um ID (número ou UUID), substitui por :id
-        if (/^\d+$/.test(segment) || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment)) {
+        if (
+          /^\d+$/.test(segment) ||
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            segment,
+          )
+        ) {
           return ':id';
         }
         return segment;
@@ -73,4 +78,3 @@ export class MetricsInterceptor implements NestInterceptor {
     return normalizedPath || '/';
   }
 }
-

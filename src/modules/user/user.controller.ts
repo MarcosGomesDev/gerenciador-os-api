@@ -12,6 +12,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UpdateUserDTO } from './dto';
 import {
   DeleteUserUseCase,
+  FindAllTechniciansUseCase,
   FindAllUsersUseCase,
   FindUserByIdUseCase,
   UpdateUserUseCase,
@@ -23,6 +24,7 @@ import {
 export class UserController {
   constructor(
     private readonly findAllUsersUseCase: FindAllUsersUseCase,
+    private readonly findAllTechniciansUseCase: FindAllTechniciansUseCase,
     private readonly findUserByIdUseCase: FindUserByIdUseCase,
     private readonly updateUserUseCase: UpdateUserUseCase,
     private readonly deleteUserUseCase: DeleteUserUseCase,
@@ -51,6 +53,11 @@ export class UserController {
     delete user.password;
 
     return user;
+  }
+
+  @Get('/technicians')
+  async findAllTechnicians() {
+    return await this.findAllTechniciansUseCase.execute();
   }
 
   @Roles('ADMIN')

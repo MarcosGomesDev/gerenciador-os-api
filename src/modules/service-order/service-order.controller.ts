@@ -44,24 +44,20 @@ export class ServiceOrderController {
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Query('orderId') orderId?: string,
     @Query('department') department?: string,
-    @Query('requesterName') requesterName?: string,
     @Query('priority') priority?: ServiceOrderPriority,
     @Query('technicianName') technicianName?: string,
-    @Query('subject') subject?: string,
+    @Query('searchTerm') searchTerm?: string,
     @Query('status') status?: ServiceOrderStatus,
   ) {
     return await this.findAllServiceOrderUseCase.execute({
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
-      orderId,
       department,
-      requesterName,
       priority,
       technicianName,
-      subject,
       status,
+      searchTerm,
     });
   }
 

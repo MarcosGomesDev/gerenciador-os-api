@@ -10,7 +10,7 @@ export class ServiceOrder {
     public readonly description: string,
     public readonly type: ServiceOrderType,
     public readonly department: Department,
-    public readonly requester: Requester,
+    public readonly requester: string,
     public readonly priority: ServiceOrderPriority,
     public readonly serviceOrderStatus: ServiceOrderStatusEntity[],
     public readonly createdAt: Date,

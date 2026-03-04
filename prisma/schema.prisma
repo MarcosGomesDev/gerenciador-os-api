@@ -46,12 +46,13 @@ model ServiceOrder {
   description        String               @map("description")
   type               ServiceOrderType     @map("type")
   department         Department
-  requester          User                 @relation(fields: [requesterId], references: [id])
-  requesterId        String               @map("requester_id")
+  requester          String
   priority           OrderPriority
   serviceOrderStatus ServiceOrderStatus[]
   attachment         String?              @map("attachment")
   createdAt          DateTime             @default(now())
+  user               User?                @relation(fields: [userId], references: [id])
+  userId             String?
 }
 
 model ServiceOrderStatus {

@@ -20,6 +20,11 @@ export class CreateServiceOrderDTO {
   @Sanitize()
   description: string;
 
+  @IsNotEmpty()
+  @IsString()
+  @Sanitize()
+  requester: string;
+
   @ApiProperty({
     enum: Object.values(serviceOrderTypes),
     enumName: 'ServiceOrderType',

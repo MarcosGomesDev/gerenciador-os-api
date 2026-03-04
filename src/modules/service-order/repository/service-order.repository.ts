@@ -25,30 +25,39 @@ export class ServiceOrderRepository {
       const {
         page = 1,
         limit = 10,
-        orderId,
         department,
-        requesterName,
         priority,
         technicianName,
-        subject,
         status,
+        searchTerm,
       } = filters;
 
       const skip = (page - 1) * limit;
 
       const where = {
-        ...(orderId && {
-          orderId: { contains: orderId, mode: 'insensitive' as const },
-        }),
         ...(department && { department: department as Department }),
         ...(priority && { priority }),
-        ...(subject && {
-          subject: { contains: subject, mode: 'insensitive' as const },
-        }),
-        ...(requesterName && {
-          requester: {
-            name: { contains: requesterName, mode: 'insensitive' as const },
-          },
+        ...(searchTerm && {
+          OR: [
+            {
+              orderId: {
+                contains: searchTerm,
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              subject: {
+                contains: searchTerm,
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              requester: {
+                contains: searchTerm,
+                mode: 'insensitive' as const,
+              },
+            },
+          ],
         }),
         ...(status || technicianName
           ? {
@@ -79,9 +88,7 @@ export class ServiceOrderRepository {
         priority: true,
         attachment: true,
         createdAt: true,
-        requester: {
-          select: { id: true, name: true },
-        },
+        requester: true,
         serviceOrderStatus: {
           select: {
             id: true,
@@ -398,12 +405,7 @@ export class ServiceOrderRepository {
           priority: true,
           attachment: true,
           createdAt: true,
-          requester: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          requester: true,
           serviceOrderStatus: {
             select: {
               id: true,
@@ -457,11 +459,7 @@ export class ServiceOrderRepository {
             description: dto.description,
             type: dto.type,
             department: dto.department,
-            requester: {
-              connect: {
-                id: userId,
-              },
-            },
+            requester: dto.requester,
             priority: dto.priority,
             attachment: dto.attachment,
             createdAt: new Date(),
