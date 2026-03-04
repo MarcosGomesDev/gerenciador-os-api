@@ -28,15 +28,6 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
 
-    const { api_key: apiKey } = request.headers;
-
-    const serverApiKey = process.env.SERVER_AUTH_SECRET;
-
-    // Usar comparação segura contra timing attacks
-    if (!apiKey || !serverApiKey || !secureCompare(apiKey, serverApiKey)) {
-      throw new UnauthorizedException('Authentication required');
-    }
-
     const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
       context.getHandler(),
       context.getClass(),
@@ -44,6 +35,15 @@ export class AuthGuard implements CanActivate {
 
     if (isPublic) {
       return true;
+    }
+
+    const { api_key: apiKey } = request.headers;
+
+    const serverApiKey = process.env.SERVER_AUTH_SECRET;
+
+    // Usar comparação segura contra timing attacks
+    if (!apiKey || !serverApiKey || !secureCompare(apiKey, serverApiKey)) {
+      throw new UnauthorizedException('Authentication required');
     }
 
     if (request.method === 'OPTIONS') {
