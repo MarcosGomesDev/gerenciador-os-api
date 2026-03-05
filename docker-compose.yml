@@ -32,7 +32,7 @@ services:
     # container_name: backoffice-prd
     image: backoffice-prd
     ports:
-      - '4000:4000'
+      - '127.0.0.1:4000:4000'
     env_file:
       - .env
     volumes:
