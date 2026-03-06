@@ -52,4 +52,4 @@ COPY --chown=node:node --from=build /var/app/node_modules ./node_modules/
 COPY --chown=node:node --from=build /var/app/dist ./dist
 COPY package.json prisma .docker/entrypoint.sh ./
 
-CMD ["sh", "-c", "ls -l dist && yarn db:deploy && node dist/src/main.js"]
+CMD ["sh", "-c", "ls -l dist && yarn db:deploy && node dist/main.js"]

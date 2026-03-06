@@ -35,14 +35,12 @@ export class UserController {
   async getList(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Query('name') name?: string,
-    @Query('email') email?: string,
+    @Query('searchTerm') searchTerm?: string,
   ) {
     return await this.findAllUsersUseCase.execute({
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
-      name,
-      email,
+      searchTerm,
     });
   }
 

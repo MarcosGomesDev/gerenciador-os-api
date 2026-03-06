@@ -1,4 +1,15 @@
 import {
+  Public,
+  Roles,
+  ThrottleLogin,
+  ThrottlePasswordReset,
+  ThrottleTokenGeneration,
+  UserId,
+} from '@common/decorators';
+import { UnauthorizedException } from '@common/filters';
+import { VerifyTokenPasswordUseCase } from '@modules/token-password';
+import { CreateUserDTO } from '@modules/user';
+import {
   Body,
   Controller,
   HttpCode,
@@ -10,6 +21,12 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import {
+  ForgotPasswordDTO,
+  LoginDTO,
+  ResetPasswordDTO,
+  VerifyTokenDTO,
+} from './dto';
+import {
   FirstAccessUserUseCase,
   ForgotPasswordUseCase,
   LogoutUserUseCase,
@@ -18,23 +35,6 @@ import {
   SignInUseCase,
   SignUpUseCase,
 } from './use-cases';
-import {
-  Public,
-  Roles,
-  ThrottleLogin,
-  ThrottlePasswordReset,
-  ThrottleTokenGeneration,
-  UserId,
-} from '@common/decorators';
-import {
-  ForgotPasswordDTO,
-  LoginDTO,
-  ResetPasswordDTO,
-  VerifyTokenDTO,
-} from './dto';
-import { CreateUserDTO } from '@modules/user';
-import { UnauthorizedException } from '@common/filters';
-import { VerifyTokenPasswordUseCase } from '@modules/token-password';
 
 @Controller('auth')
 export class AuthController {
@@ -66,7 +66,7 @@ export class AuthController {
     return { accessToken, refreshToken };
   }
 
-  @Roles('admin')
+  @Roles('ADMIN')
   @Post('/sign-up')
   @UsePipes(ValidationPipe)
   @HttpCode(HttpStatus.CREATED)
@@ -116,7 +116,7 @@ export class AuthController {
   @UsePipes(ValidationPipe)
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: ForgotPasswordDTO) {
-    return await this.forgotPasswordUseCase.execute(dto.email);
+    return await this.forgotPasswordUseCase.execute(dto.taxIdentifier);
   }
 
   @Public()
@@ -125,7 +125,7 @@ export class AuthController {
   @UsePipes(ValidationPipe)
   @HttpCode(HttpStatus.OK)
   async verifyToken(@Body() dto: VerifyTokenDTO) {
-    await this.verifyTokenPasswordUseCase.execute(dto.email, dto.token);
+    return await this.verifyTokenPasswordUseCase.execute(dto.token);
   }
 
   @Public()

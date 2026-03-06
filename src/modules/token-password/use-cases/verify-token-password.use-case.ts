@@ -1,7 +1,7 @@
+import { BadRequestException } from '@common/filters';
+import { CryptographyService } from '@infrastructure/criptography';
 import { Inject, Injectable } from '@nestjs/common';
 import { TokenPasswordRepository } from '../repository';
-import { CryptographyService } from '@infrastructure/criptography';
-import { BadRequestException } from '@common/filters';
 
 @Injectable()
 export class VerifyTokenPasswordUseCase {
@@ -11,17 +11,17 @@ export class VerifyTokenPasswordUseCase {
     private readonly cryptographyService: CryptographyService,
   ) {}
 
-  async execute(email: string, token: string) {
-    const tokens = await this.tokenPasswordRepository.verifyToken(email);
+  async execute(token: string) {
+    const tokenPassword = await this.tokenPasswordRepository.verifyToken(token);
 
-    for (const tokenRecord of tokens) {
-      const isMatch = await this.cryptographyService.compare(
-        token,
-        tokenRecord.token,
-      );
-      if (isMatch) return true;
+    if (
+      !tokenPassword ||
+      tokenPassword.used ||
+      tokenPassword.expiresAt < new Date()
+    ) {
+      throw new BadRequestException('Token inválido ou expirado!');
     }
 
-    throw new BadRequestException('Token inválido ou expirado!');
+    return tokenPassword;
   }
 }

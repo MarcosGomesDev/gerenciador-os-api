@@ -1,22 +1,25 @@
+import { generateId } from '@common/utils';
 import { PrismaService } from '@infrastructure/prisma';
 import { Injectable } from '@nestjs/common';
-import { TokenPassword } from '../entities';
-import { generateId } from '@common/utils';
 import { CreateTokenDTO } from '../dto';
+import { TokenPassword } from '../entities';
 
 @Injectable()
 export class TokenPasswordRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async verifyToken(email: string): Promise<TokenPassword[]> {
-    return await this.prismaService.passwordResetToken.findMany({
+  async verifyToken(token: string): Promise<TokenPassword> {
+    return await this.prismaService.passwordResetToken.findUnique({
       where: {
-        id: generateId(),
-        email,
-        used: false,
-        expiresAt: { gt: new Date() },
+        token,
       },
-      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        token: true,
+        email: true,
+        used: true,
+        expiresAt: true,
+      },
     });
   }
 

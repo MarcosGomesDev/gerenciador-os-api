@@ -132,6 +132,80 @@ export class ServiceOrderRepository {
     }
   }
 
+  async findServiceOrderByTechnician(
+    technicianId: string,
+    filters: FindAllFilters = {},
+  ): Promise<{
+    data: ServiceOrder[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const { page = 1, limit = 25 } = filters;
+
+    const skip = (page - 1) * limit;
+
+    const where = {
+      serviceOrderStatus: { some: { technicianId } },
+    };
+
+    const select = {
+      id: true,
+      orderId: true,
+      subject: true,
+      description: true,
+      type: true,
+      department: true,
+      priority: true,
+      attachment: true,
+      createdAt: true,
+      requester: true,
+      serviceOrderStatus: {
+        select: {
+          id: true,
+          status: true,
+          serviceOrderId: true,
+          note: true,
+          createdAt: true,
+          technician: {
+            select: { id: true, name: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' as const },
+        take: 1,
+      },
+    };
+
+    try {
+      const [data, total] = await Promise.all([
+        this.prisma.serviceOrder.findMany({
+          where,
+          select,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.serviceOrder.count({ where }),
+      ]);
+
+      return {
+        data,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      void this.logger.warn(
+        'ServiceOrderRepository.create: usuário não encontrado',
+        {
+          technicianId,
+          error: String(error),
+        },
+      );
+      throw new BadRequestException('Erro ao buscar ordens de serviço: ');
+    }
+  }
+
   async getDashboardSummary(): Promise<{
     totalOrders: {
       total: number;

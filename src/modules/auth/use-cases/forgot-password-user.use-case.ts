@@ -1,32 +1,25 @@
 import { CreateTokenPasswordUseCase } from '@modules/token-password';
-import { FindUserByEmailUseCase } from '@modules/user';
+import { FindUserByTaxIdentifierUseCase } from '@modules/user';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ForgotPasswordUseCase {
   constructor(
-    private readonly findUserByEmailUseCase: FindUserByEmailUseCase,
+    private readonly findUserByTaxIdentifierUseCase: FindUserByTaxIdentifierUseCase,
     private readonly createTokenPasswordUseCase: CreateTokenPasswordUseCase,
   ) {}
 
-  async execute(email: string) {
+  async execute(taxIdentifier: string) {
     // Proteção contra Enumeration Attack:
     // Sempre retornar sucesso, mesmo se email não existir
     // Não revelar se o email está cadastrado no sistema
-    const user = await this.findUserByEmailUseCase
-      .execute(email)
+    const user = await this.findUserByTaxIdentifierUseCase
+      .execute(taxIdentifier)
       .catch(() => null);
 
     // Só criar token e enviar email se o usuário existir
     if (user) {
       await this.createTokenPasswordUseCase.execute(user.email);
     }
-
-    // SEMPRE retornar a mesma mensagem, independente se email existe ou não
-    // Isso previne enumeration attacks e protege privacidade (LGPD)
-    return {
-      message:
-        'Se o email estiver cadastrado, você receberá um código de recuperação!',
-    };
   }
 }

@@ -1,8 +1,8 @@
+import { BadRequestException } from '@common/filters';
+import { CryptographyService } from '@infrastructure/criptography';
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { CreateUserDTO } from '../dto';
 import { UserRepository } from '../repository';
-import { CryptographyService } from '@infrastructure/criptography';
-import { BadRequestException } from '@common/filters';
 import { FindUserByEmailUseCase } from './find-user-by-email.use-case';
 import { FindUserByTaxIdentifierUseCase } from './find-user-by-tax-identifier.use-case';
 import { FindUserRoleUseCase } from './find-user-role.use-case';
@@ -44,15 +44,20 @@ export class CreateUserUseCase {
       data.taxIdentifier,
     );
 
-    const newUser = await this.userRepository.create({
-      ...data,
-      password: hashedPassword,
-    });
+    const newUser = await this.userRepository.create(
+      {
+        ...data,
+        password: hashedPassword,
+      },
+      userId,
+    );
 
     if (!newUser) {
       throw new BadRequestException(
         'Ocorreu um erro ao criar o usuário! Tente novamente mais tarde!',
       );
     }
+
+    return newUser;
   }
 }

@@ -22,6 +22,7 @@ import {
   CreateServiceOrderUseCase,
   FindAllServiceOrderUseCase,
   FindServiceOrderByIdUseCase,
+  FindServiceOrderByTechnicianUseCase,
   GetDashboardSummaryUseCase,
   GetSummaryChartsUseCase,
   UpdateServiceOrderUseCase,
@@ -34,6 +35,7 @@ export class ServiceOrderController {
   constructor(
     private readonly findAllServiceOrderUseCase: FindAllServiceOrderUseCase,
     private readonly findServiceOrderByIdUseCase: FindServiceOrderByIdUseCase,
+    private readonly findServiceOrderByTechnicianUseCase: FindServiceOrderByTechnicianUseCase,
     private readonly getDashboardSummaryUseCase: GetDashboardSummaryUseCase,
     private readonly getSummaryChartsUseCase: GetSummaryChartsUseCase,
     private readonly createServiceOrderUseCase: CreateServiceOrderUseCase,
@@ -69,6 +71,22 @@ export class ServiceOrderController {
   @Get('/summary-charts')
   async getSummaryCharts() {
     return await this.getSummaryChartsUseCase.execute();
+  }
+
+  @Roles('TECHNICIAN')
+  @Get('/my-orders')
+  async findMyOrders(
+    @UserId() technicianId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return await this.findServiceOrderByTechnicianUseCase.execute(
+      technicianId,
+      {
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+      },
+    );
   }
 
   @Get('/:id')

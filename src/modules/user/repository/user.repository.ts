@@ -19,14 +19,26 @@ export class UserRepository {
     totalPages: number;
   }> {
     try {
-      const { page = 1, limit = 10, name, email } = filters;
+      const { page = 1, limit = 10, searchTerm } = filters;
       const skip = (page - 1) * limit;
 
       const where = {
         isDeleted: false,
-        ...(name && { name: { contains: name, mode: 'insensitive' as const } }),
-        ...(email && {
-          email: { contains: email, mode: 'insensitive' as const },
+        ...(searchTerm && {
+          OR: [
+            {
+              name: {
+                contains: searchTerm,
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              email: {
+                contains: searchTerm,
+                mode: 'insensitive' as const,
+              },
+            },
+          ],
         }),
       };
 
@@ -192,7 +204,7 @@ export class UserRepository {
     }
   }
 
-  async create(data: CreateUserDTO & { password: string }) {
+  async create(data: CreateUserDTO & { password: string }, userId: string) {
     try {
       const user = await this.prisma.user.create({
         data: {
@@ -202,10 +214,12 @@ export class UserRepository {
           isFirstAccess: true,
         },
       });
+
       void this.logger.info('Usuário criado', {
-        userId: user.id,
         email: user.email,
+        createdBy: userId,
       });
+
       return user;
     } catch (error) {
       void this.logger.error('UserRepository.create falhou', {
