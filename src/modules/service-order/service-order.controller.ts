@@ -73,16 +73,17 @@ export class ServiceOrderController {
     return await this.getSummaryChartsUseCase.execute();
   }
 
-  @Roles('TECHNICIAN')
   @Get('/my-orders')
   async findMyOrders(
     @UserId() userId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('searchTerm') searchTerm?: string,
   ) {
     return await this.findServiceOrderByUserIdUseCase.execute(userId, {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
+      searchTerm,
     });
   }
 

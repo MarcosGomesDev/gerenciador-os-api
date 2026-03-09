@@ -141,12 +141,18 @@ export class ServiceOrderRepository {
     page: number;
     totalPages: number;
   }> {
-    const { page = 1, limit = 25 } = filters;
+    const { page = 1, limit = 25, searchTerm } = filters;
 
     const skip = (page - 1) * limit;
 
     const where = {
       userId,
+      ...(searchTerm && {
+        OR: [
+          { orderId: { contains: searchTerm, mode: 'insensitive' as const } },
+          { subject: { contains: searchTerm, mode: 'insensitive' as const } },
+        ],
+      }),
     };
 
     const select = {
