@@ -132,8 +132,8 @@ export class ServiceOrderRepository {
     }
   }
 
-  async findServiceOrderByTechnician(
-    technicianId: string,
+  async findServiceOrderByUserId(
+    userId: string,
     filters: FindAllFilters = {},
   ): Promise<{
     data: ServiceOrder[];
@@ -146,7 +146,7 @@ export class ServiceOrderRepository {
     const skip = (page - 1) * limit;
 
     const where = {
-      serviceOrderStatus: { some: { technicianId } },
+      userId,
     };
 
     const select = {
@@ -198,7 +198,7 @@ export class ServiceOrderRepository {
       void this.logger.warn(
         'ServiceOrderRepository.create: usuário não encontrado',
         {
-          technicianId,
+          userId,
           error: String(error),
         },
       );

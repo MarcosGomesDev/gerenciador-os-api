@@ -22,7 +22,7 @@ import {
   CreateServiceOrderUseCase,
   FindAllServiceOrderUseCase,
   FindServiceOrderByIdUseCase,
-  FindServiceOrderByTechnicianUseCase,
+  FindServiceOrderByUserIdUseCase,
   GetDashboardSummaryUseCase,
   GetSummaryChartsUseCase,
   UpdateServiceOrderUseCase,
@@ -35,7 +35,7 @@ export class ServiceOrderController {
   constructor(
     private readonly findAllServiceOrderUseCase: FindAllServiceOrderUseCase,
     private readonly findServiceOrderByIdUseCase: FindServiceOrderByIdUseCase,
-    private readonly findServiceOrderByTechnicianUseCase: FindServiceOrderByTechnicianUseCase,
+    private readonly findServiceOrderByUserIdUseCase: FindServiceOrderByUserIdUseCase,
     private readonly getDashboardSummaryUseCase: GetDashboardSummaryUseCase,
     private readonly getSummaryChartsUseCase: GetSummaryChartsUseCase,
     private readonly createServiceOrderUseCase: CreateServiceOrderUseCase,
@@ -76,17 +76,14 @@ export class ServiceOrderController {
   @Roles('TECHNICIAN')
   @Get('/my-orders')
   async findMyOrders(
-    @UserId() technicianId: string,
+    @UserId() userId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return await this.findServiceOrderByTechnicianUseCase.execute(
-      technicianId,
-      {
-        page: page ? Number(page) : undefined,
-        limit: limit ? Number(limit) : undefined,
-      },
-    );
+    return await this.findServiceOrderByUserIdUseCase.execute(userId, {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
   }
 
   @Get('/:id')

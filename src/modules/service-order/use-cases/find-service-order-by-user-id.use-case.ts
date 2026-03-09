@@ -4,14 +4,14 @@ import { ServiceOrder } from '../entities';
 import { ServiceOrderRepository } from '../repository';
 
 @Injectable()
-export class FindServiceOrderByTechnicianUseCase {
+export class FindServiceOrderByUserIdUseCase {
   constructor(
     @Inject('ServiceOrderRepository')
     private readonly serviceOrderRepository: ServiceOrderRepository,
   ) {}
 
   async execute(
-    technicianId: string,
+    userId: string,
     filters: FindAllFilters = {},
   ): Promise<{
     data: ServiceOrder[];
@@ -19,8 +19,8 @@ export class FindServiceOrderByTechnicianUseCase {
     page: number;
     totalPages: number;
   }> {
-    return await this.serviceOrderRepository.findServiceOrderByTechnician(
-      technicianId,
+    return await this.serviceOrderRepository.findServiceOrderByUserId(
+      userId,
       filters,
     );
   }
