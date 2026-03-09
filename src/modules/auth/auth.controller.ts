@@ -125,7 +125,7 @@ export class AuthController {
   @UsePipes(ValidationPipe)
   @HttpCode(HttpStatus.OK)
   async verifyToken(@Body() dto: VerifyTokenDTO) {
-    return await this.verifyTokenPasswordUseCase.execute(dto.token);
+    return await this.verifyTokenPasswordUseCase.execute(dto.token, dto.email);
   }
 
   @Public()
@@ -137,6 +137,7 @@ export class AuthController {
     const ip = req.ip || req.socket?.remoteAddress || 'unknown';
     const userAgent = req.get('user-agent') || 'unknown';
     await this.resetPasswordUseCase.execute(
+      dto.token,
       dto.email,
       dto.password,
       ip,

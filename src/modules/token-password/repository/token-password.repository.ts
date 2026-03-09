@@ -8,11 +8,18 @@ import { TokenPassword } from '../entities';
 export class TokenPasswordRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async verifyToken(token: string): Promise<TokenPassword> {
-    return await this.prismaService.passwordResetToken.findUnique({
+  /**
+   * Busca o token de reset mais recente para o email, que ainda não foi usado e não expirou.
+   * O token no banco é armazenado em hash, então não é possível buscar por token em texto.
+   */
+  async findLatestValidByEmail(email: string): Promise<TokenPassword | null> {
+    const record = await this.prismaService.passwordResetToken.findFirst({
       where: {
-        token,
+        email,
+        used: false,
+        expiresAt: { gt: new Date() },
       },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         token: true,
@@ -21,6 +28,16 @@ export class TokenPasswordRepository {
         expiresAt: true,
       },
     });
+
+    if (!record) return null;
+
+    return new TokenPassword(
+      record.id,
+      record.token,
+      record.email,
+      record.expiresAt,
+      record.used,
+    );
   }
 
   async createToken(dto: CreateTokenDTO): Promise<void> {
@@ -28,7 +45,7 @@ export class TokenPasswordRepository {
       data: {
         id: generateId(),
         ...dto,
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutos
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 5 minutos
       },
     });
   }

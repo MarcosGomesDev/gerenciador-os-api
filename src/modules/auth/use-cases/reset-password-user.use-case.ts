@@ -1,11 +1,15 @@
 import { SecurityLoggerService } from '@infrastructure/security';
-import { UpdateTokenPasswordUseCase } from '@modules/token-password';
+import {
+  UpdateTokenPasswordUseCase,
+  VerifyTokenPasswordUseCase,
+} from '@modules/token-password';
 import { FindUserByEmailUseCase, UpdateUserUseCase } from '@modules/user';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ResetPasswordUseCase {
   constructor(
+    private readonly verifyTokenPasswordUseCase: VerifyTokenPasswordUseCase,
     private readonly findUserByEmailUseCase: FindUserByEmailUseCase,
     private readonly updateUserUseCase: UpdateUserUseCase,
     private readonly updateTokenPasswordUseCase: UpdateTokenPasswordUseCase,
@@ -13,12 +17,16 @@ export class ResetPasswordUseCase {
   ) {}
 
   async execute(
+    token: string,
     email: string,
     password: string,
     ip?: string,
     userAgent?: string,
   ) {
     try {
+      // Valida o token antes de permitir alterar a senha
+      await this.verifyTokenPasswordUseCase.execute(token, email);
+
       const user = await this.findUserByEmailUseCase.execute(email);
 
       await this.updateUserUseCase.execute(

@@ -1,8 +1,8 @@
 import { generateToken } from '@common/utils';
 import { CryptographyService } from '@infrastructure/criptography';
+import { MailService } from '@infrastructure/providers';
 import { Inject, Injectable } from '@nestjs/common';
 import { TokenPasswordRepository } from '../repository';
-import { MailService } from '@infrastructure/providers';
 
 @Injectable()
 export class CreateTokenPasswordUseCase {
@@ -22,12 +22,22 @@ export class CreateTokenPasswordUseCase {
       token: encriptToken,
     });
 
-    // Enviar email
-    await this.mailService.sendMail({
-      to: email,
-      subject: 'Recuperação de senha',
-      template: 'reset-password',
-      context: { token: generatedToken },
-    });
+    if (process.env.NODE_ENV === 'prod') {
+      const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '') ?? '';
+      const resetLink = frontendUrl
+        ? `${frontendUrl}/reset-password`
+        : undefined;
+
+      await this.mailService.sendMail({
+        to: email,
+        subject: 'Recuperação de senha',
+        template: 'reset-password',
+        context: {
+          token: generatedToken,
+          resetLink,
+          expiresAt: process.env.TOKEN_PASSWORD_EXPIRES_MINUTES ?? 15,
+        },
+      });
+    }
   }
 }
