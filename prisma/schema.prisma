@@ -108,6 +108,13 @@ model Log {
   @@map("logs")
 }
 
+model seedStatus {
+  id         String   @id @default(cuid())
+  executedAt DateTime @default(now()) @map("executed_at")
+
+  @@map("seed_status")
+}
+
 enum LogLevel {
   INFO
   WARNING
