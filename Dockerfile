@@ -17,9 +17,9 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 WORKDIR /var/app
 ARG YARN_TIMEOUT=60000
 COPY package.json yarn.lock ./
-RUN yarn --frozen-lockfile --network-timeout $YARN_TIMEOUT
+RUN if command -v yarn >/dev/null 2>&1; then yarn --frozen-lockfile --network-timeout $YARN_TIMEOUT; else npm install; fi
 COPY . .
-RUN yarn prisma:generate && yarn build
+RUN if command -v yarn >/dev/null 2>&1; then yarn prisma:generate && yarn build; else npm run prisma:generate && npm run build; fi
 RUN npm prune --production
 
 RUN find . -type f -name "*.sh" -exec sed -i 's/\r$//' {} +
@@ -50,6 +50,8 @@ USER node
 EXPOSE 4000
 COPY --chown=node:node --from=build /var/app/node_modules ./node_modules/
 COPY --chown=node:node --from=build /var/app/dist ./dist
-COPY package.json prisma .docker/entrypoint.sh ./
+COPY --chown=node:node --from=build /var/app/package.json ./package.json
+COPY --chown=node:node --from=build /var/app/prisma ./prisma
+COPY --chown=node:node --from=build /var/app/.docker/entrypoint.sh ./.docker/entrypoint.sh
 
-CMD ["sh", "-c", "ls -l dist && yarn db:deploy && node dist/main.js"]
+CMD ["sh", "-c", "ls -l ./dist && if command -v yarn >/dev/null 2>&1; then yarn db:deploy; else npm run db:deploy; fi && node dist/src/main.js"]
