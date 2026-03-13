@@ -149,8 +149,17 @@ async function bootstrap() {
   app.use(
     rateLimit({
       windowMs: 60 * 1000,
-      max: 100,
+      max: 1000,
       skip: (req) => req.method === 'OPTIONS',
+      keyGenerator: (req) => {
+        const forwarded = req.headers['x-forwarded-for'];
+        const ip =
+          req.ip ||
+          (Array.isArray(forwarded) ? forwarded[0] : forwarded) ||
+          (req.headers['x-real-ip'] as string) ||
+          'unknown';
+        return ip;
+      },
     }),
   );
 
