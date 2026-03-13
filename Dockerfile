@@ -52,6 +52,8 @@ COPY --chown=node:node --from=build /var/app/node_modules ./node_modules/
 COPY --chown=node:node --from=build /var/app/dist ./dist
 COPY --chown=node:node --from=build /var/app/package.json ./package.json
 COPY --chown=node:node --from=build /var/app/prisma ./prisma
+# Templates .pug: o código compilado usa __dirname em dist/, então precisam estar em dist/.../templates
+COPY --chown=node:node --from=build /var/app/src/infrastructure/providers/mail/templates ./dist/src/infrastructure/providers/mail/templates
 COPY --chown=node:node --from=build /var/app/.docker/entrypoint.sh ./.docker/entrypoint.sh
 
 CMD ["sh", "-c", "ls -l ./dist && if command -v yarn >/dev/null 2>&1; then yarn db:deploy; else npm run db:deploy; fi && node dist/src/main.js"]

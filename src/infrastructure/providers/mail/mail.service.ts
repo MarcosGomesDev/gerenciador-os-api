@@ -24,7 +24,8 @@ export class MailService {
         template,
         context,
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Error sending email:', error);
         throw new BadRequestException(
           'Ocorreu um erro ao enviar o email. Tente novamente!',
         );
