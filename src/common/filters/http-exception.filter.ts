@@ -12,8 +12,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { TokenExpiredException } from './token-expired.exception';
 import { REQUEST_ID_KEY } from '../interceptors';
+import { TokenExpiredException } from './token-expired.exception';
 
 type ErrorResponse = {
   statusCode: number;
@@ -34,7 +34,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
     'password',
     'token',
     'apikey',
-    'api_key',
     'secret',
     'authorization',
     'cookie',
@@ -260,7 +259,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       // Tokens longos (mais de 20 caracteres alfanuméricos)
       /\b[a-zA-Z0-9]{30,}\b/,
       // Padrões de senha/token com valor (ex: "password: abc123" ou "token=xyz")
-      /\b(password|token|secret|apikey|api_key|authorization|jwt)\s*[:=]\s*['"]?[^\s'"]{10,}['"]?/i,
+      /\b(password|token|secret|authorization|jwt)\s*[:=]\s*['"]?[^\s'"]{10,}['"]?/i,
       // Emails com senhas (ex: "password: senha123")
       /\b(password|senha)\s*[:=]\s*['"]?[^\s'"]{6,}['"]?/i,
     ];

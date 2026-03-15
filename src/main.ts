@@ -90,7 +90,7 @@ async function bootstrap() {
       'X-Requested-With',
       'X-Forwarded-For',
       'X-Request-ID',
-      'api_key',
+      'X-Api-Key',
     ],
     exposedHeaders: ['X-Token-Expired'],
     credentials: false,
@@ -150,16 +150,6 @@ async function bootstrap() {
     rateLimit({
       windowMs: 60 * 1000,
       max: 1000,
-      skip: (req) => req.method === 'OPTIONS',
-      keyGenerator: (req) => {
-        const forwarded = req.headers['x-forwarded-for'];
-        const ip =
-          req.ip ||
-          (Array.isArray(forwarded) ? forwarded[0] : forwarded) ||
-          (req.headers['x-real-ip'] as string) ||
-          'unknown';
-        return ip;
-      },
     }),
   );
 

@@ -37,7 +37,7 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    const { api_key: apiKey } = request.headers;
+    const apiKey = request.headers['x-api-key'] as string;
 
     const serverApiKey = process.env.SERVER_AUTH_SECRET;
 

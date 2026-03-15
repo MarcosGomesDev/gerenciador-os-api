@@ -16,7 +16,7 @@ import { timingSafeEqual } from 'crypto';
  *
  * @example
  * ```typescript
- * const apiKey = request.headers['api_key'];
+ * const apiKey = request.headers['x-api-key'];
  * const serverApiKey = process.env.SERVER_AUTH_SECRET;
  *
  * if (!apiKey || !secureCompare(apiKey, serverApiKey)) {
