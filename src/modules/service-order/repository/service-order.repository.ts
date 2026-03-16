@@ -613,6 +613,6 @@ export class ServiceOrderRepository {
 
   private calculatePercentageChange(previous: number, current: number): number {
     if (previous === 0) return current > 0 ? 100 : 0;
-    return Number((((current - previous) / previous) * 100).toFixed(2));
+    return Math.round(Number(((current - previous) / previous) * 100));
   }
 }
