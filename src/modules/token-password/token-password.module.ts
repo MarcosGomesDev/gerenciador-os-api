@@ -5,9 +5,10 @@ import {
   VerifyTokenPasswordUseCase,
 } from './use-cases';
 import { TokenPasswordRepository } from './repository';
+import { MailModule } from '@infrastructure/providers';
 
 @Module({
-  imports: [],
+  imports: [MailModule],
   controllers: [],
   providers: [
     VerifyTokenPasswordUseCase,

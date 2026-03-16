@@ -1,5 +1,6 @@
 import { UserModule } from '@modules/user';
 import { Module } from '@nestjs/common';
+import { MailModule } from '@infrastructure/providers';
 import {
   FirstAccessUserUseCase,
   ForgotPasswordUseCase,
@@ -13,7 +14,7 @@ import { AuthController } from './auth.controller';
 import { TokenPasswordModule } from '@modules/token-password';
 
 @Module({
-  imports: [UserModule, TokenPasswordModule],
+  imports: [UserModule, TokenPasswordModule, MailModule],
   controllers: [AuthController],
   providers: [
     SignInUseCase,

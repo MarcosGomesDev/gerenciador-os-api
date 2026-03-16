@@ -1,34 +1,38 @@
+import { Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
-import { Global, Module } from '@nestjs/common';
-import { join } from 'path';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+// import { MailController } from './mail.controller';
 import { MailService } from './mail.service';
 
-@Global()
 @Module({
   imports: [
     MailerModule.forRootAsync({
-      useFactory: () => ({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
         transport: {
-          host: process.env.SMTP_HOST,
-          port: parseInt(process.env.SMTP_PORT),
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-          },
+          host: config.get<string>('SMTP_HOST'),
+          port: config.get<number>('SMTP_PORT') ?? 587,
           secure: true,
+          name:
+            config.get<string>('SMTP_EHLO_NAME') ??
+            config.get<string>('SMTP_HOST'),
+          auth: {
+            user: config.get<string>('SMTP_USER'),
+            pass: config.get<string>('SMTP_PASS'),
+          },
+          // requireTLS: true,
+          tls: {
+            servername: config.get<string>('SMTP_HOST'),
+          },
         },
         defaults: {
-          from: `"Prefeitura de Belford Roxo" <${process.env.SMTP_FROM}>`,
-        },
-        template: {
-          dir: join(__dirname, 'templates'),
-          adapter: new PugAdapter(),
-          options: { strict: true },
+          from: `"${config.get('SMTP_FROM_NAME') ?? 'No Reply'}" <${config.get('SMTP_FROM_EMAIL') ?? config.get('SMTP_USER')}>`,
         },
       }),
     }),
   ],
+  // controllers: [MailController],
   providers: [MailService],
   exports: [MailService],
 })
