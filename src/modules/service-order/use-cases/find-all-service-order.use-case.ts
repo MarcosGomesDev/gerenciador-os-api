@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { FindAllFilters } from '../dto';
-import { ServiceOrder } from '../entities';
+import { ListServiceOrder } from '../entities';
 import { ServiceOrderRepository } from '../repository';
 
 @Injectable()
@@ -11,7 +11,7 @@ export class FindAllServiceOrderUseCase {
   ) {}
 
   async execute(filters: FindAllFilters): Promise<{
-    data: ServiceOrder[];
+    data: ListServiceOrder[];
     total: number;
     page: number;
     totalPages: number;

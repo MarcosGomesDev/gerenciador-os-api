@@ -1,6 +1,13 @@
-import { ServiceOrderStatusEntity } from '@modules/service-order-status';
+import {
+  ServiceOrderStatusEntity,
+  Technician,
+} from '@modules/service-order-status';
 import { Department } from 'types/department';
-import { ServiceOrderPriority, ServiceOrderType } from 'types/service-order';
+import {
+  ServiceOrderPriority,
+  ServiceOrderStatus,
+  ServiceOrderType,
+} from 'types/service-order';
 
 export class ServiceOrder {
   constructor(
@@ -12,16 +19,10 @@ export class ServiceOrder {
     public readonly department: Department,
     public readonly requester: string,
     public readonly priority: ServiceOrderPriority,
+    public readonly status: ServiceOrderStatus,
     public readonly serviceOrderStatus: ServiceOrderStatusEntity[],
     public readonly createdAt: Date,
     public readonly attachment?: string,
-  ) {}
-}
-
-class Requester {
-  constructor(
-    public readonly id: string,
-    public readonly name: string,
   ) {}
 }
 
@@ -33,10 +34,12 @@ export class ListServiceOrder {
     public readonly description: string,
     public readonly type: ServiceOrderType,
     public readonly department: Department,
-    public readonly requester: Requester,
+    public readonly requester: string,
     public readonly priority: ServiceOrderPriority,
-    public readonly serviceOrderStatus: ServiceOrderStatusEntity,
+    public readonly status: ServiceOrderStatus,
     public readonly createdAt: Date,
     public readonly attachment?: string,
+    public readonly technician?: Technician,
+    public readonly finishedTime?: string,
   ) {}
 }

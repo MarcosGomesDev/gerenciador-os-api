@@ -19,7 +19,7 @@ export class UserRepository {
     totalPages: number;
   }> {
     try {
-      const { page = 1, limit = 10, searchTerm } = filters;
+      const { page = 1, limit = 25, searchTerm } = filters;
       const skip = (page - 1) * limit;
 
       const where = {

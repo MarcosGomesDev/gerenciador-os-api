@@ -1,12 +1,13 @@
 import { BadRequestException, NotFoundException } from '@common/filters';
-import { generateId } from '@common/utils';
+import { generateId, getResolutionDuration } from '@common/utils';
 import { LoggerService } from '@infrastructure/log';
 import { PrismaService } from '@infrastructure/prisma';
+import { Technician } from '@modules/service-order-status';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Department } from 'types/department';
 import { CreateServiceOrderDTO, FindAllFilters } from '../dto';
-import { ServiceOrder } from '../entities';
+import { ListServiceOrder, ServiceOrder } from '../entities';
 
 @Injectable()
 export class ServiceOrderRepository {
@@ -16,7 +17,7 @@ export class ServiceOrderRepository {
   ) {}
 
   async findAll(filters: FindAllFilters = {}): Promise<{
-    data: ServiceOrder[];
+    data: ListServiceOrder[];
     total: number;
     page: number;
     totalPages: number;
@@ -24,7 +25,7 @@ export class ServiceOrderRepository {
     try {
       const {
         page = 1,
-        limit = 10,
+        limit = 25,
         department,
         priority,
         technicianName,
@@ -59,19 +60,17 @@ export class ServiceOrderRepository {
             },
           ],
         }),
-        ...(status || technicianName
+        ...(status && { status }),
+        ...(technicianName
           ? {
               serviceOrderStatus: {
                 some: {
-                  ...(status && { status }),
-                  ...(technicianName && {
-                    technician: {
-                      name: {
-                        contains: technicianName,
-                        mode: 'insensitive' as const,
-                      },
+                  technician: {
+                    name: {
+                      contains: technicianName,
+                      mode: 'insensitive' as const,
                     },
-                  }),
+                  },
                 },
               },
             }
@@ -84,6 +83,7 @@ export class ServiceOrderRepository {
         subject: true,
         description: true,
         type: true,
+        status: true,
         department: true,
         priority: true,
         attachment: true,
@@ -117,7 +117,34 @@ export class ServiceOrderRepository {
       ]);
 
       return {
-        data,
+        data: data.map(
+          (order) =>
+            new ListServiceOrder(
+              order.id,
+              order.orderId,
+              order.subject,
+              order.description,
+              order.type,
+              order.department,
+              order.requester,
+              order.priority,
+              order.status,
+              order.createdAt,
+              order.attachment,
+              order.serviceOrderStatus?.[0]?.technician
+                ? new Technician(
+                    order.serviceOrderStatus[0].technician.id,
+                    order.serviceOrderStatus[0].technician.name,
+                  )
+                : null,
+              order.serviceOrderStatus?.[0]?.status === 'CLOSED'
+                ? getResolutionDuration(
+                    order.createdAt,
+                    order.serviceOrderStatus?.[0]?.createdAt,
+                  )
+                : null,
+            ),
+        ),
         total,
         page,
         totalPages: Math.ceil(total / limit),
@@ -163,6 +190,7 @@ export class ServiceOrderRepository {
       type: true,
       department: true,
       priority: true,
+      status: true,
       attachment: true,
       createdAt: true,
       requester: true,
@@ -481,6 +509,7 @@ export class ServiceOrderRepository {
           subject: true,
           description: true,
           type: true,
+          status: true,
           department: true,
           priority: true,
           attachment: true,
@@ -538,6 +567,7 @@ export class ServiceOrderRepository {
             subject: dto.subject,
             description: dto.description,
             type: dto.type,
+            status: 'OPEN',
             department: dto.department,
             requester: dto.requester,
             priority: dto.priority,

@@ -11,7 +11,7 @@ export class ServiceOrderStatusEntity {
   ) {}
 }
 
-class Technician {
+export class Technician {
   constructor(
     public readonly id: string,
     public readonly name: string,

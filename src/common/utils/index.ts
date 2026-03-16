@@ -4,4 +4,5 @@ export * from './crypto.util';
 export * from './format-filename';
 export * from './generate-id';
 export * from './generate-token';
+export * from './get-resolution-time';
 export * from './sanitize';

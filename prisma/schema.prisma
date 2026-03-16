@@ -48,11 +48,14 @@ model ServiceOrder {
   department         Department
   requester          String
   priority           OrderPriority
+  status             OrderStatus
   serviceOrderStatus ServiceOrderStatus[]
   attachment         String?              @map("attachment")
   createdAt          DateTime             @default(now())
   user               User?                @relation(fields: [userId], references: [id])
   userId             String?
+
+  @@map("service_order")
 }
 
 model ServiceOrderStatus {
@@ -64,6 +67,8 @@ model ServiceOrderStatus {
   technician     User?        @relation(fields: [technicianId], references: [id])
   technicianId   String?      @map("technician_id")
   createdAt      DateTime     @default(now())
+
+  @@map("service_order_status")
 }
 
 enum OrderPriority {

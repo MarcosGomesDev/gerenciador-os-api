@@ -15,25 +15,36 @@ export class ServiceOrderStatusRepository {
 
   async create(dto: CreateServiceOrderStatusDTO): Promise<void> {
     try {
-      await this.prisma.serviceOrderStatus.create({
-        data: {
-          id: generateId(),
-          status: dto.status,
-          note: dto.note,
-          serviceOrder: {
-            connect: {
-              id: dto.serviceOrderId,
-            },
-          },
-          ...(dto.technicianId && {
-            technician: {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.serviceOrderStatus.create({
+          data: {
+            id: generateId(),
+            status: dto.status,
+            note: dto.note,
+            serviceOrder: {
               connect: {
-                id: dto.technicianId,
+                id: dto.serviceOrderId,
               },
             },
-          }),
-          createdAt: new Date(),
-        },
+            ...(dto.technicianId && {
+              technician: {
+                connect: {
+                  id: dto.technicianId,
+                },
+              },
+            }),
+            createdAt: new Date(),
+          },
+        });
+
+        await tx.serviceOrder.update({
+          where: {
+            id: dto.serviceOrderId,
+          },
+          data: {
+            status: dto.status,
+          },
+        });
       });
       void this.logger.info('Status da ordem de serviço criado', {
         serviceOrderId: dto.serviceOrderId,
