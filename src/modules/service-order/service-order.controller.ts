@@ -78,12 +78,14 @@ export class ServiceOrderController {
     @UserId() userId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('status') status?: ServiceOrderStatus,
     @Query('searchTerm') searchTerm?: string,
   ) {
     return await this.findServiceOrderByUserIdUseCase.execute(userId, {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
       searchTerm,
+      status,
     });
   }
 

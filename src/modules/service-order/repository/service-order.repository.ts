@@ -168,12 +168,36 @@ export class ServiceOrderRepository {
     page: number;
     totalPages: number;
   }> {
-    const { page = 1, limit = 25, searchTerm } = filters;
+    const { page = 1, limit = 25, searchTerm, status } = filters;
 
     const skip = (page - 1) * limit;
 
+    const userRole = await this.prisma.user.findUnique({
+      where: { id: userId, isDeleted: false, isActive: true },
+      select: { role: true },
+    });
+
+    let userWhere = {};
+
+    if (userRole?.role === 'TECHNICIAN') {
+      userWhere = {
+        serviceOrderStatus: {
+          some: {
+            technicianId: userId,
+          },
+        },
+      };
+    }
+
+    if (userRole?.role === 'DEPARTMENT') {
+      userWhere = {
+        userId: userId,
+      };
+    }
+
     const where = {
-      userId,
+      ...userWhere,
+      ...(status && { status }),
       ...(searchTerm && {
         OR: [
           { orderId: { contains: searchTerm, mode: 'insensitive' as const } },
@@ -221,6 +245,10 @@ export class ServiceOrderRepository {
         }),
         this.prisma.serviceOrder.count({ where }),
       ]);
+
+      const statusOrder = (s: string) =>
+        s === 'IN_PROGRESS' ? 0 : s === 'CLOSED' ? 1 : 2;
+      data.sort((a, b) => statusOrder(a.status) - statusOrder(b.status));
 
       return {
         data,
