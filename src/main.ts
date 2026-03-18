@@ -8,7 +8,6 @@ import { apiReference } from '@scalar/nestjs-api-reference';
 import compress from 'compression';
 import cookieParser from 'cookie-parser';
 import { json, RequestHandler } from 'express';
-import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { join } from 'path';
 import { AppModule } from './app.module';
@@ -144,14 +143,6 @@ async function bootstrap() {
   );
 
   app.use(compress());
-
-  // Rate limiter não bloqueia OPTIONS
-  app.use(
-    rateLimit({
-      windowMs: 60 * 1000,
-      max: 1000,
-    }),
-  );
 
   app.getHttpAdapter().getInstance().disable('x-powered-by');
 
