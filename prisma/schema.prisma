@@ -24,6 +24,7 @@ model User {
   deletedAt            DateTime?            @map("deleted_at")
   serviceOrders        ServiceOrder[]
   serviceOrderStatuses ServiceOrderStatus[]
+  historics            Historic[]
 
   @@map("users")
 }
@@ -54,6 +55,7 @@ model ServiceOrder {
   createdAt          DateTime             @default(now())
   user               User?                @relation(fields: [userId], references: [id])
   userId             String?
+  historics          Historic[]
 
   @@map("service_order")
 }
@@ -111,6 +113,26 @@ model Log {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("logs")
+}
+
+model Historic {
+  id        String         @id @default(uuid())
+  detail    String         @map("detail")
+  action    HistoricAction
+  order     ServiceOrder   @relation(fields: [orderId], references: [id])
+  orderId   String         @map("order_id")
+  createdAt DateTime       @default(now()) @map("created_at")
+  user      User?          @relation(fields: [userId], references: [id])
+  userId    String?        @map("user_id")
+
+  @@map("historics")
+}
+
+enum HistoricAction {
+  CREATE
+  UPDATE
+  CLOSED
+  ATTRIBUTED
 }
 
 model seedStatus {

@@ -45,7 +45,28 @@ export class ServiceOrderStatusRepository {
             status: dto.status,
           },
         });
+
+        await tx.historic.create({
+          data: {
+            id: generateId(),
+            action:
+              dto.status === 'CLOSED'
+                ? 'CLOSED'
+                : dto.technicianId && !dto.note
+                  ? 'ATTRIBUTED'
+                  : 'UPDATE',
+            orderId: dto.serviceOrderId,
+            detail:
+              dto.status === 'CLOSED'
+                ? 'Ordem de serviço fechada'
+                : dto.technicianId && !dto.note
+                  ? 'Ordem de serviço atribuída'
+                  : 'Ordem de serviço atualizada',
+            userId: dto.technicianId,
+          },
+        });
       });
+
       void this.logger.info('Status da ordem de serviço criado', {
         serviceOrderId: dto.serviceOrderId,
         status: dto.status,

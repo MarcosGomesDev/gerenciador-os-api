@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -20,6 +22,7 @@ import {
 } from './dto';
 import {
   CreateServiceOrderUseCase,
+  ExportServiceOrderCsvUseCase,
   FindAllServiceOrderUseCase,
   FindServiceOrderByIdUseCase,
   FindServiceOrderByUserIdUseCase,
@@ -40,6 +43,7 @@ export class ServiceOrderController {
     private readonly getSummaryChartsUseCase: GetSummaryChartsUseCase,
     private readonly createServiceOrderUseCase: CreateServiceOrderUseCase,
     private readonly updateServiceOrderUseCase: UpdateServiceOrderUseCase,
+    private readonly exportServiceOrderCsvUseCase: ExportServiceOrderCsvUseCase,
   ) {}
 
   @Get()
@@ -87,6 +91,34 @@ export class ServiceOrderController {
       searchTerm,
       status,
     });
+  }
+
+  @Get('export/csv')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async exportCsv(
+    @UserId() userId: string,
+    @Query('department') department?: string,
+    @Query('priority') priority?: ServiceOrderPriority,
+    @Query('technicianName') technicianName?: string,
+    @Query('searchTerm') searchTerm?: string,
+    @Query('status') status?: ServiceOrderStatus,
+  ) {
+    const { jobId } = await this.exportServiceOrderCsvUseCase.execute({
+      userId,
+      filters: {
+        department,
+        priority,
+        technicianName,
+        searchTerm,
+        status,
+      },
+    });
+
+    return {
+      message:
+        'Exportação em processamento. Você receberá o CSV por e-mail quando estiver pronto.',
+      jobId,
+    };
   }
 
   @Get('/:id')

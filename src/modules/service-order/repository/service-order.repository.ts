@@ -16,6 +16,81 @@ export class ServiceOrderRepository {
     private readonly logger: LoggerService,
   ) {}
 
+  private buildWhere(filters: Omit<FindAllFilters, 'page' | 'limit'> = {}) {
+    const { department, priority, technicianName, status, searchTerm } =
+      filters;
+
+    return {
+      ...(department && { department: department as Department }),
+      ...(priority && { priority }),
+      ...(searchTerm && {
+        OR: [
+          {
+            orderId: {
+              contains: searchTerm,
+              mode: 'insensitive' as const,
+            },
+          },
+          {
+            subject: {
+              contains: searchTerm,
+              mode: 'insensitive' as const,
+            },
+          },
+          {
+            requester: {
+              contains: searchTerm,
+              mode: 'insensitive' as const,
+            },
+          },
+        ],
+      }),
+      ...(status && { status }),
+      ...(technicianName
+        ? {
+            serviceOrderStatus: {
+              some: {
+                technician: {
+                  name: {
+                    contains: technicianName,
+                    mode: 'insensitive' as const,
+                  },
+                },
+              },
+            },
+          }
+        : {}),
+    };
+  }
+
+  private readonly select = {
+    id: true,
+    orderId: true,
+    subject: true,
+    description: true,
+    type: true,
+    status: true,
+    department: true,
+    priority: true,
+    attachment: true,
+    createdAt: true,
+    requester: true,
+    serviceOrderStatus: {
+      select: {
+        id: true,
+        status: true,
+        serviceOrderId: true,
+        note: true,
+        createdAt: true,
+        technician: {
+          select: { id: true, name: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' as const },
+      take: 1,
+    },
+  } as const;
+
   async findAll(filters: FindAllFilters = {}): Promise<{
     data: ListServiceOrder[];
     total: number;
@@ -35,80 +110,18 @@ export class ServiceOrderRepository {
 
       const skip = (page - 1) * limit;
 
-      const where = {
-        ...(department && { department: department as Department }),
-        ...(priority && { priority }),
-        ...(searchTerm && {
-          OR: [
-            {
-              orderId: {
-                contains: searchTerm,
-                mode: 'insensitive' as const,
-              },
-            },
-            {
-              subject: {
-                contains: searchTerm,
-                mode: 'insensitive' as const,
-              },
-            },
-            {
-              requester: {
-                contains: searchTerm,
-                mode: 'insensitive' as const,
-              },
-            },
-          ],
-        }),
-        ...(status && { status }),
-        ...(technicianName
-          ? {
-              serviceOrderStatus: {
-                some: {
-                  technician: {
-                    name: {
-                      contains: technicianName,
-                      mode: 'insensitive' as const,
-                    },
-                  },
-                },
-              },
-            }
-          : {}),
-      };
-
-      const select = {
-        id: true,
-        orderId: true,
-        subject: true,
-        description: true,
-        type: true,
-        status: true,
-        department: true,
-        priority: true,
-        attachment: true,
-        createdAt: true,
-        requester: true,
-        serviceOrderStatus: {
-          select: {
-            id: true,
-            status: true,
-            serviceOrderId: true,
-            note: true,
-            createdAt: true,
-            technician: {
-              select: { id: true, name: true },
-            },
-          },
-          orderBy: { createdAt: 'desc' as const },
-          take: 1,
-        },
-      };
+      const where = this.buildWhere({
+        department,
+        priority,
+        technicianName,
+        status,
+        searchTerm,
+      });
 
       const [data, total] = await Promise.all([
         this.prisma.serviceOrder.findMany({
           where,
-          select,
+          select: this.select,
           skip,
           take: limit,
           orderBy: { createdAt: 'desc' },
@@ -155,6 +168,69 @@ export class ServiceOrderRepository {
       });
       throw new BadRequestException(
         'Erro ao buscar ordens de serviço: ' + error.message,
+      );
+    }
+  }
+
+  async count(filters: Omit<FindAllFilters, 'page' | 'limit'> = {}) {
+    const where = this.buildWhere(filters);
+    return await this.prisma.serviceOrder.count({ where });
+  }
+
+  async findManyForExport(params: {
+    filters: Omit<FindAllFilters, 'page' | 'limit'>;
+    skip: number;
+    take: number;
+  }): Promise<ListServiceOrder[]> {
+    try {
+      const { filters, skip, take } = params;
+      const where = this.buildWhere(filters);
+
+      const data = await this.prisma.serviceOrder.findMany({
+        where,
+        select: this.select,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return data.map(
+        (order) =>
+          new ListServiceOrder(
+            order.id,
+            order.orderId,
+            order.subject,
+            order.description,
+            order.type,
+            order.department,
+            order.requester,
+            order.priority,
+            order.status,
+            order.createdAt,
+            order.attachment,
+            order.serviceOrderStatus?.[0]?.technician
+              ? new Technician(
+                  order.serviceOrderStatus[0].technician.id,
+                  order.serviceOrderStatus[0].technician.name,
+                )
+              : null,
+            order.serviceOrderStatus?.[0]?.status === 'CLOSED'
+              ? getResolutionDuration(
+                  order.createdAt,
+                  order.serviceOrderStatus?.[0]?.createdAt,
+                )
+              : null,
+          ),
+      );
+    } catch (error) {
+      void this.logger.error(
+        'ServiceOrderRepository.findManyForExport falhou',
+        {
+          error: String(error),
+        },
+      );
+      throw new BadRequestException(
+        'Erro ao buscar ordens de serviço para exportação: ' + error.message,
       );
     }
   }
@@ -611,7 +687,18 @@ export class ServiceOrderRepository {
             status: 'OPEN',
           },
         });
+
+        await tx.historic.create({
+          data: {
+            id: generateId(),
+            action: 'CREATE',
+            orderId: serviceOrder.id,
+            detail: 'Ordem de serviço criada',
+            userId,
+          },
+        });
       });
+
       void this.logger.info('Ordem de serviço criada', {
         orderId,
         userId,

@@ -1,0 +1,18 @@
+doctype html
+html
+  head
+    title Exportação concluída
+  body(style="font-family: Arial, sans-serif; padding: 20px;")
+    h1(style="color: #333;") Seu arquivo está pronto
+    p Olá#{name ? ' ' + name : ''},
+    p A exportação solicitada foi concluída e o arquivo CSV segue anexado a este e-mail.
+    if fileName
+      p
+        strong Arquivo:
+        |  #{fileName}
+    if rows
+      p
+        strong Linhas:
+        |  #{rows}
+    p(style="color: #666; font-size: 14px;") Se você não solicitou esta exportação, ignore esta mensagem.
+

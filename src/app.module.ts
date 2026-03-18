@@ -7,10 +7,13 @@ import { JwtModule } from '@infrastructure/jwt';
 import { LogModule } from '@infrastructure/log';
 import { MetricsInterceptor, MetricsModule } from '@infrastructure/metrics';
 import { PrismaModule } from '@infrastructure/prisma';
+import { ExportsModule } from '@infrastructure/exports';
+import { QueueModule } from '@infrastructure/queue/queue.module';
 import { MailModule, StorageModule } from '@infrastructure/providers';
 import { SecurityModule } from '@infrastructure/security';
 import { ThrottlerConfigModule } from '@infrastructure/throttler';
 import { AuthModule } from '@modules/auth';
+import { HistoricModule } from '@modules/historic';
 import { ServiceOrderModule } from '@modules/service-order';
 import { ServiceOrderStatusModule } from '@modules/service-order-status';
 import { TokenPasswordModule } from '@modules/token-password';
@@ -31,6 +34,8 @@ import { HttpExceptionFilter } from './common/filters';
     CircuitBreakerModule,
     MetricsModule,
     CryptographyModule,
+    QueueModule,
+    ExportsModule,
     MailModule,
     StorageModule,
     PrismaModule,
@@ -43,6 +48,7 @@ import { HttpExceptionFilter } from './common/filters';
     TokenPasswordModule,
     ServiceOrderModule,
     ServiceOrderStatusModule,
+    HistoricModule,
   ],
   controllers: [AppController],
   providers: [
