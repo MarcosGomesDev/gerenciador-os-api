@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-// import { MailController } from './mail.controller';
+import { join } from 'path';
 import { MailService } from './mail.service';
 
 @Module({
@@ -29,10 +30,14 @@ import { MailService } from './mail.service';
         defaults: {
           from: `"${config.get('SMTP_FROM_NAME') ?? 'No Reply'}" <${config.get('SMTP_FROM_EMAIL') ?? config.get('SMTP_USER')}>`,
         },
+        template: {
+          dir: join(__dirname, 'templates'),
+          adapter: new PugAdapter(),
+          options: { strict: true },
+        },
       }),
     }),
   ],
-  // controllers: [MailController],
   providers: [MailService],
   exports: [MailService],
 })
