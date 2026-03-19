@@ -1,3 +1,4 @@
+import { BadRequestException } from '@common/filters';
 import { generateId } from '@common/utils';
 import { LoggerService } from '@infrastructure/log';
 import { PrismaService } from '@infrastructure/prisma';
@@ -226,7 +227,7 @@ export class UserRepository {
         email: data.email,
         error: String(error),
       });
-      throw new InternalServerErrorException(error);
+      throw new BadRequestException('Erro ao criar usuário!');
     }
   }
 

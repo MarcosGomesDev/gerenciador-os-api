@@ -93,7 +93,7 @@ export class ServiceOrderController {
     });
   }
 
-  @Get('export/csv')
+  @Get('/export/csv')
   @HttpCode(HttpStatus.ACCEPTED)
   async exportCsv(
     @UserId() userId: string,

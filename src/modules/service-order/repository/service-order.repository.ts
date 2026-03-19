@@ -676,7 +676,11 @@ export class ServiceOrderRepository {
             requester: dto.requester,
             priority: dto.priority,
             attachment: dto.attachment,
-            createdAt: new Date(),
+            user: {
+              connect: {
+                id: userId,
+              },
+            },
           },
         });
 
