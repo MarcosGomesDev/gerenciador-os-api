@@ -13,11 +13,13 @@ export class SignUpUseCase {
     const newUser = await this.createUserUseCase.execute(dto, userId);
 
     if (process.env.NODE_ENV === 'prod') {
+      const frontendUrl =
+        process.env.FRONTEND_URL?.replace(/\/$/, '') ?? '';
       await this.mailService.sendMail({
         to: newUser.email,
         subject: 'Bem-vindo ao sistema',
         template: 'welcome',
-        context: { name: newUser.name },
+        context: { name: newUser.name, frontendUrl },
       });
     }
   }

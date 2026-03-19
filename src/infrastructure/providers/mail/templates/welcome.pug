@@ -6,6 +6,9 @@ html
     h1(style="color: #333;") Bem-vindo!
     p Olá#{name ? ' ' + name : ''},
     p Sua conta foi criada com sucesso. Para ativá-la, faça login no sistema.
+    if frontendUrl
+      p
+        a(href=frontendUrl style="color: #0066cc;") Acessar o sistema
     p
       strong Para acessar, utilize:
     ul(style="list-style: none; padding-left: 0;")
