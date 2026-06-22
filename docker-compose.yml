@@ -1,4 +1,4 @@
-name: backoffice-prod
+name: gerenciador-os-api
 
 services:
   postgres:
@@ -11,10 +11,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      PGDATA: /var/lib/postgresql/data
+      PGDATA: /var/lib/postgresql/18/docker
 
     volumes:
-      - backoffice_pgdata_v18:/var/lib/postgresql/data
+      - gerenciador-os_pgdata_v18:/var/lib/postgresql
 
     shm_size: 256m
 
@@ -29,14 +29,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # container_name: backoffice-prd
-    image: backoffice-prd
+    # container_name: gerenciador-os-prd
+    image: gerenciador-os-prd
     ports:
-      - '4000:4000'
+      - '127.0.0.1:${APP_PORT:-3011}:3011'
     env_file:
       - .env
+    environment:
+      PORT: 3011
     volumes:
-      - .:/usr/src/app
+      - gerenciador-os_storage:/home/node/app/storage
     restart: unless-stopped
 
     depends_on:
@@ -47,7 +49,7 @@ services:
       test:
         [
           'CMD-SHELL',
-          'wget --quiet --tries=1 --spider http://localhost:4000/api/health || curl -f http://localhost:4000/api/health || exit 1',
+          'wget --quiet --tries=1 --spider http://localhost:3011/api/health || curl -f http://localhost:3011/api/health || exit 1',
         ]
       interval: 30s
       timeout: 10s
@@ -55,5 +57,7 @@ services:
       start_period: 40s
 
 volumes:
-  backoffice_pgdata_v18:
-    name: backoffice-pgdata-v18
+  gerenciador-os_pgdata_v18:
+    name: gerenciador-os-pgdata-v18
+  gerenciador-os_storage:
+    name: gerenciador-os-storage
