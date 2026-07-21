@@ -64,10 +64,10 @@ COPY --chown=node:node --from=build /var/app/node_modules/.prisma ./node_modules
 COPY --chown=node:node --from=build /var/app/dist ./dist
 COPY --chown=node:node --from=build /var/app/package.json ./package.json
 COPY --chown=node:node --from=build /var/app/prisma ./prisma
-COPY --chown=node:node --from=build /var/app/dados ./dados
 COPY --chown=node:node --from=build /var/app/backup.sql ./backup.sql
-# Templates .pug: o código compilado usa __dirname em dist/, então precisam estar em dist/.../templates
+# Templates .pug e assets de PDF: o código compilado usa __dirname em dist/
 COPY --chown=node:node --from=build /var/app/src/infrastructure/providers/mail/templates ./dist/src/infrastructure/providers/mail/templates
+COPY --chown=node:node --from=build /var/app/src/modules/service-order/pdf/assets ./dist/src/modules/service-order/pdf/assets
 COPY --chown=node:node --from=build /var/app/.docker/entrypoint.sh ./.docker/entrypoint.sh
 
 ENTRYPOINT ["dumb-init", "--"]
