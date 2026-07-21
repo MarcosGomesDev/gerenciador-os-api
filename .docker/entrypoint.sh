@@ -37,4 +37,4 @@ set -eu
 
 # restore_backup_if_needed
 
-exec node dist/src/main.js
+exec node dist/main.js

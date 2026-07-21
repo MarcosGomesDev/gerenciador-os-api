@@ -101,7 +101,7 @@ export class ServiceOrderPdfGenerator {
     const candidates = [
       join(__dirname, 'assets', fileName),
       join(process.cwd(), 'src/modules/service-order/pdf/assets', fileName),
-      join(process.cwd(), 'dist/src/modules/service-order/pdf/assets', fileName),
+      join(process.cwd(), 'dist/modules/service-order/pdf/assets', fileName),
       join(process.cwd(), 'assets/pdf', fileName),
     ];
     return candidates.find((p) => existsSync(p)) ?? null;
