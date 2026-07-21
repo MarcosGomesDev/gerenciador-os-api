@@ -3,6 +3,7 @@ import {
   Department,
   OrderPriority,
   OrderStatus,
+  PatrimonySituation,
   PrismaClient,
   Role,
   ServiceOrderType,
@@ -83,6 +84,51 @@ async function main() {
     .filter((user) => user.role === Role.TECHNICIAN)
     .map((user) => user.id);
 
+  const locationType = await prisma.locationType.create({
+    data: {
+      id: uuidv4(),
+      name: 'Sede',
+    },
+  });
+
+  const location = await prisma.location.create({
+    data: {
+      id: uuidv4(),
+      name: 'Secretaria de Ciência e Tecnologia',
+      address: 'Rua Principal, 100',
+      department:
+        Department.SECRETARIA_MUNICIPAL_DE_CIENCIA_TECNOLOGIA_E_INOVACAO,
+      locationTypeId: locationType.id,
+    },
+  });
+
+  const patrimonyType = await prisma.patrimonyType.create({
+    data: {
+      id: uuidv4(),
+      name: 'Equipamento de TI',
+    },
+  });
+
+  const patrimonies = [];
+  for (let i = 0; i < 20; i++) {
+    const department =
+      departments[faker.number.int({ min: 0, max: departments.length - 1 })];
+    patrimonies.push(
+      await prisma.patrimony.create({
+        data: {
+          id: uuidv4(),
+          inventoryNumber: `PAT-${String(i + 1).padStart(4, '0')}`,
+          description: faker.commerce.productName(),
+          situation: PatrimonySituation.ACTIVE,
+          locationName: location.name,
+          department,
+          locationId: location.id,
+          patrimonyTypeId: patrimonyType.id,
+        },
+      }),
+    );
+  }
+
   const year = new Date().getFullYear();
 
   const getRandomDateInMonth = (year: number, monthIndex: number) => {
@@ -103,6 +149,8 @@ async function main() {
   for (let i = 0; i < targetCount; i++) {
     const user =
       allUsers[faker.number.int({ min: 0, max: allUsers.length - 1 })];
+    const patrimony =
+      patrimonies[faker.number.int({ min: 0, max: patrimonies.length - 1 })];
 
     const monthIndex = months[i % months.length];
     const createdAt = getRandomDateInMonth(year, monthIndex);
@@ -159,6 +207,7 @@ async function main() {
         attachment: null,
         createdAt,
         userId: user.id,
+        patrimonyId: patrimony.id,
       },
     });
 

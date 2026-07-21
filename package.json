@@ -17,8 +17,7 @@
   },
   "scripts": {
     "build": "prisma generate && yarn db:deploy && yarn db:seed && nest build",
-    "build:prod": "prisma generate && nest build && yarn build:seed",
-    "build:seed": "tsc -p prisma/tsconfig.json",
+    "build:prod": "prisma generate && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "seed": "node prisma/seed.js",
@@ -35,9 +34,6 @@
     "prisma:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "node prisma/seed.js",
-    "import:legacy": "ts-node prisma/import-legacy.ts",
-    "import:legacy:dry-run": "ts-node prisma/import-legacy.ts --dry-run",
-    "import:legacy:validate": "ts-node prisma/import-legacy.ts --validate-only",
     "fix:closed-status-order": "ts-node prisma/fix-closed-status-order.ts"
   },
   "dependencies": {

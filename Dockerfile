@@ -18,8 +18,7 @@ ARG YARN_TIMEOUT=60000
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile --network-timeout $YARN_TIMEOUT
 COPY . .
-RUN yarn build:prod \
-    && test -f prisma/dist/import-legacy/run-import.js
+RUN yarn build:prod
 
 RUN find . -type f -name "*.sh" -exec sed -i 's/\r$//' {} +
 
