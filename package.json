@@ -16,7 +16,7 @@
     "seed": "node prisma/seed.js"
   },
   "scripts": {
-    "build": "prisma generate && yarn db:deploy && yarn db:seed && nest build",
+    "build": "prisma generate && nest build",
     "build:prod": "prisma generate && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
