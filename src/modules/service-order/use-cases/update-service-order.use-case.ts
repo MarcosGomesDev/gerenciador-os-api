@@ -13,11 +13,17 @@ export class UpdateServiceOrderUseCase {
   async execute(id: string, dto: UpdateServiceOrderDTO): Promise<void> {
     await this.findServiceOrderByIdUseCase.execute(id);
 
-    await this.createServiceOrderStatusUseCase.execute({
-      serviceOrderId: id,
-      status: dto.status,
-      note: dto.note,
-      technicianId: dto.technicianId,
-    });
+    await this.createServiceOrderStatusUseCase.execute(
+      {
+        serviceOrderId: id,
+        status: dto.status,
+        note: dto.note,
+        technicianId: dto.technicianId,
+      },
+      {
+        labDescription: dto.labDescription,
+        labTechnicianId: dto.labTechnicianId,
+      },
+    );
   }
 }

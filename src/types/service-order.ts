@@ -23,7 +23,10 @@ export type ServiceOrderPriority =
 export const serviceOrderStatuses = {
   OPEN: 'OPEN',
   IN_PROGRESS: 'IN_PROGRESS',
+  IN_LABORATORY: 'IN_LABORATORY',
+  LAB_COMPLETED: 'LAB_COMPLETED',
   CLOSED: 'CLOSED',
+  CANCELLED: 'CANCELLED',
 } as const;
 
 export type ServiceOrderStatus =

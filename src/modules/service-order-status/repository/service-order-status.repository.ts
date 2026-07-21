@@ -6,6 +6,11 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { CreateServiceOrderStatusDTO } from '../dto';
 
+export type ServiceOrderLabUpdates = {
+  labDescription?: string;
+  labTechnicianId?: string;
+};
+
 @Injectable()
 export class ServiceOrderStatusRepository {
   constructor(
@@ -13,9 +18,27 @@ export class ServiceOrderStatusRepository {
     private readonly logger: LoggerService,
   ) {}
 
-  async create(dto: CreateServiceOrderStatusDTO): Promise<void> {
+  async create(
+    dto: CreateServiceOrderStatusDTO,
+    orderUpdates?: ServiceOrderLabUpdates,
+  ): Promise<void> {
     try {
       await this.prisma.$transaction(async (tx) => {
+        const currentOrder = await tx.serviceOrder.findUnique({
+          where: { id: dto.serviceOrderId },
+          select: {
+            status: true,
+            labEntryAt: true,
+            labExitAt: true,
+          },
+        });
+
+        if (!currentOrder) {
+          throw new NotFoundException(
+            dto.serviceOrderId + ' ordem de serviço não encontrada.',
+          );
+        }
+
         await tx.serviceOrderStatus.create({
           data: {
             id: generateId(),
@@ -37,13 +60,39 @@ export class ServiceOrderStatusRepository {
           },
         });
 
+        const serviceOrderData: Prisma.ServiceOrderUpdateInput = {
+          status: dto.status,
+        };
+
+        if (orderUpdates?.labDescription !== undefined) {
+          serviceOrderData.labDescription = orderUpdates.labDescription;
+        }
+
+        if (orderUpdates?.labTechnicianId) {
+          serviceOrderData.labTechnician = {
+            connect: { id: orderUpdates.labTechnicianId },
+          };
+        }
+
+        if (dto.status === 'IN_LABORATORY' && !currentOrder.labEntryAt) {
+          serviceOrderData.labEntryAt = new Date();
+        }
+
+        if (dto.status === 'LAB_COMPLETED' && !currentOrder.labExitAt) {
+          serviceOrderData.labExitAt = new Date();
+        } else if (
+          currentOrder.status === 'IN_LABORATORY' &&
+          dto.status !== 'IN_LABORATORY' &&
+          !currentOrder.labExitAt
+        ) {
+          serviceOrderData.labExitAt = new Date();
+        }
+
         await tx.serviceOrder.update({
           where: {
             id: dto.serviceOrderId,
           },
-          data: {
-            status: dto.status,
-          },
+          data: serviceOrderData,
         });
 
         await tx.historic.create({
@@ -91,9 +140,20 @@ export class ServiceOrderStatusRepository {
         error.code === 'P2003'
       ) {
         void this.logger.warn(
-          'ServiceOrderStatusRepository.create: técnico não encontrado',
-          { technicianId: dto.technicianId },
+          'ServiceOrderStatusRepository.create: referência não encontrada',
+          {
+            serviceOrderId: dto.serviceOrderId,
+            technicianId: dto.technicianId,
+            labTechnicianId: orderUpdates?.labTechnicianId,
+          },
         );
+
+        if (orderUpdates?.labTechnicianId) {
+          throw new NotFoundException(
+            orderUpdates.labTechnicianId + ' técnico de laboratório não encontrado.',
+          );
+        }
+
         throw new NotFoundException(
           dto.technicianId + ' técnico não encontrado.',
         );

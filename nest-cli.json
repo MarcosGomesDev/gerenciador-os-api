@@ -13,6 +13,11 @@
       {
         "include": "src/infrastructure/providers/mail/templates/**/*",
         "outDir": "dist/src/infrastructure/providers/mail/templates"
+      },
+      {
+        "include": "src/modules/service-order/pdf/assets/**/*",
+        "outDir": "dist/src/modules/service-order/pdf/assets",
+        "watchAssets": true
       }
     ]
   }

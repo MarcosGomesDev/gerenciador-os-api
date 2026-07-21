@@ -3,12 +3,14 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
   Patch,
   Post,
   Query,
+  StreamableFile,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -23,10 +25,12 @@ import {
 import {
   CreateServiceOrderUseCase,
   ExportServiceOrderCsvUseCase,
+  ExportServiceOrderPdfUseCase,
   FindAllServiceOrderUseCase,
   FindServiceOrderByIdUseCase,
   FindServiceOrderByUserIdUseCase,
   GetDashboardSummaryUseCase,
+  GetServiceOrderAttachmentUseCase,
   GetSummaryChartsUseCase,
   UpdateServiceOrderUseCase,
 } from './use-cases';
@@ -40,10 +44,12 @@ export class ServiceOrderController {
     private readonly findServiceOrderByIdUseCase: FindServiceOrderByIdUseCase,
     private readonly findServiceOrderByUserIdUseCase: FindServiceOrderByUserIdUseCase,
     private readonly getDashboardSummaryUseCase: GetDashboardSummaryUseCase,
+    private readonly getServiceOrderAttachmentUseCase: GetServiceOrderAttachmentUseCase,
     private readonly getSummaryChartsUseCase: GetSummaryChartsUseCase,
     private readonly createServiceOrderUseCase: CreateServiceOrderUseCase,
     private readonly updateServiceOrderUseCase: UpdateServiceOrderUseCase,
     private readonly exportServiceOrderCsvUseCase: ExportServiceOrderCsvUseCase,
+    private readonly exportServiceOrderPdfUseCase: ExportServiceOrderPdfUseCase,
   ) {}
 
   @Get()
@@ -119,6 +125,28 @@ export class ServiceOrderController {
         'Exportação em processamento. Você receberá o CSV por e-mail quando estiver pronto.',
       jobId,
     };
+  }
+
+  @Get('/:id/attachment')
+  async getAttachment(@Param('id') id: string): Promise<StreamableFile> {
+    const file = await this.getServiceOrderAttachmentUseCase.execute(id);
+
+    return new StreamableFile(file.stream, {
+      type: file.mimeType,
+      disposition: `inline; filename="${file.fileName}"`,
+    });
+  }
+
+  @Roles('ADMIN', 'TECHNICIAN')
+  @Get('/:id/pdf')
+  @Header('Content-Type', 'application/pdf')
+  async exportPdf(@Param('id') id: string): Promise<StreamableFile> {
+    const file = await this.exportServiceOrderPdfUseCase.execute(id);
+
+    return new StreamableFile(file.buffer, {
+      type: 'application/pdf',
+      disposition: `attachment; filename="${file.fileName}"`,
+    });
   }
 
   @Get('/:id')

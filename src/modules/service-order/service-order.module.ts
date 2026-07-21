@@ -4,13 +4,16 @@ import { Module } from '@nestjs/common';
 import { ServiceOrderRepository } from './repository';
 import { ServiceOrderController } from './service-order.controller';
 import { ServiceOrderExportProcessor } from './jobs/service-order-export.processor';
+import { ServiceOrderPdfGenerator } from './pdf/service-order-pdf.generator';
 import {
   CreateServiceOrderUseCase,
   FindAllServiceOrderUseCase,
   FindServiceOrderByIdUseCase,
   FindServiceOrderByUserIdUseCase,
   ExportServiceOrderCsvUseCase,
+  ExportServiceOrderPdfUseCase,
   GetDashboardSummaryUseCase,
+  GetServiceOrderAttachmentUseCase,
   GetSummaryChartsUseCase,
   UpdateServiceOrderUseCase,
 } from './use-cases';
@@ -23,10 +26,13 @@ import {
     FindServiceOrderByIdUseCase,
     FindServiceOrderByUserIdUseCase,
     ExportServiceOrderCsvUseCase,
+    ExportServiceOrderPdfUseCase,
     GetDashboardSummaryUseCase,
+    GetServiceOrderAttachmentUseCase,
     GetSummaryChartsUseCase,
     CreateServiceOrderUseCase,
     UpdateServiceOrderUseCase,
+    ServiceOrderPdfGenerator,
     ServiceOrderRepository,
     ServiceOrderExportProcessor,
     {

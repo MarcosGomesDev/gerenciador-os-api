@@ -14,6 +14,11 @@ import { SecurityModule } from '@infrastructure/security';
 import { ThrottlerConfigModule } from '@infrastructure/throttler';
 import { AuthModule } from '@modules/auth';
 import { HistoricModule } from '@modules/historic';
+import { LocationModule } from '@modules/location';
+import { LocationTypeModule } from '@modules/location-type';
+import { PatrimonyModule } from '@modules/patrimony';
+import { PatrimonyTypeModule } from '@modules/patrimony-type';
+import { ReportedIssueModule } from '@modules/reported-issue';
 import { ServiceOrderModule } from '@modules/service-order';
 import { ServiceOrderStatusModule } from '@modules/service-order-status';
 import { TokenPasswordModule } from '@modules/token-password';
@@ -49,6 +54,11 @@ import { HttpExceptionFilter } from './common/filters';
     ServiceOrderModule,
     ServiceOrderStatusModule,
     HistoricModule,
+    LocationTypeModule,
+    PatrimonyTypeModule,
+    LocationModule,
+    PatrimonyModule,
+    ReportedIssueModule,
   ],
   controllers: [AppController],
   providers: [

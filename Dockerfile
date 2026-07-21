@@ -18,7 +18,8 @@ ARG YARN_TIMEOUT=60000
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile --network-timeout $YARN_TIMEOUT
 COPY . .
-RUN yarn build
+RUN yarn build:prod \
+    && test -f prisma/dist/import-legacy/run-import.js
 
 RUN find . -type f -name "*.sh" -exec sed -i 's/\r$//' {} +
 
@@ -42,6 +43,7 @@ WORKDIR /home/node/app
 RUN apk add --no-cache \
     dumb-init \
     openssl \
+    postgresql18-client \
     chromium \
     nss \
     freetype \
@@ -63,6 +65,8 @@ COPY --chown=node:node --from=build /var/app/node_modules/.prisma ./node_modules
 COPY --chown=node:node --from=build /var/app/dist ./dist
 COPY --chown=node:node --from=build /var/app/package.json ./package.json
 COPY --chown=node:node --from=build /var/app/prisma ./prisma
+COPY --chown=node:node --from=build /var/app/dados ./dados
+COPY --chown=node:node --from=build /var/app/backup.sql ./backup.sql
 # Templates .pug: o código compilado usa __dirname em dist/, então precisam estar em dist/.../templates
 COPY --chown=node:node --from=build /var/app/src/infrastructure/providers/mail/templates ./dist/src/infrastructure/providers/mail/templates
 COPY --chown=node:node --from=build /var/app/.docker/entrypoint.sh ./.docker/entrypoint.sh

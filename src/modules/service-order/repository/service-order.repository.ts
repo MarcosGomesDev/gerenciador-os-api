@@ -2,12 +2,68 @@ import { BadRequestException, NotFoundException } from '@common/filters';
 import { generateId, getResolutionDuration } from '@common/utils';
 import { LoggerService } from '@infrastructure/log';
 import { PrismaService } from '@infrastructure/prisma';
-import { Technician } from '@modules/service-order-status';
+import { Technician, ServiceOrderStatusEntity } from '@modules/service-order-status';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Department } from 'types/department';
 import { CreateServiceOrderDTO, FindAllFilters } from '../dto';
-import { ListServiceOrder, ServiceOrder } from '../entities';
+import {
+  ListServiceOrder,
+  ServiceOrder,
+  ServiceOrderLocationSummary,
+  ServiceOrderPatrimonySummary,
+  ServiceOrderReportedIssueSummary,
+  ServiceOrderUserSummary,
+} from '../entities';
+
+const serviceOrderListScalarSelect = {
+  patrimonyId: true,
+  reportedIssueId: true,
+  isExternal: true,
+  contactName: true,
+  contactPhone: true,
+  labEntryAt: true,
+  labExitAt: true,
+  labDescription: true,
+  labTechnicianId: true,
+  closedAt: true,
+  closedById: true,
+  serviceRating: true,
+  ratedAt: true,
+} as const;
+
+const serviceOrderListSelect = {
+  id: true,
+  orderId: true,
+  subject: true,
+  description: true,
+  type: true,
+  status: true,
+  department: true,
+  priority: true,
+  attachment: true,
+  createdAt: true,
+  requester: true,
+  ...serviceOrderListScalarSelect,
+  serviceOrderStatus: {
+    select: {
+      id: true,
+      status: true,
+      serviceOrderId: true,
+      note: true,
+      createdAt: true,
+      technician: {
+        select: { id: true, name: true },
+      },
+    },
+    orderBy: { createdAt: 'desc' as const },
+    take: 1,
+  },
+} as const;
+
+type ServiceOrderListRecord = Prisma.ServiceOrderGetPayload<{
+  select: typeof serviceOrderListSelect;
+}>;
 
 @Injectable()
 export class ServiceOrderRepository {
@@ -63,33 +119,48 @@ export class ServiceOrderRepository {
     };
   }
 
-  private readonly select = {
-    id: true,
-    orderId: true,
-    subject: true,
-    description: true,
-    type: true,
-    status: true,
-    department: true,
-    priority: true,
-    attachment: true,
-    createdAt: true,
-    requester: true,
-    serviceOrderStatus: {
-      select: {
-        id: true,
-        status: true,
-        serviceOrderId: true,
-        note: true,
-        createdAt: true,
-        technician: {
-          select: { id: true, name: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' as const },
-      take: 1,
-    },
-  } as const;
+  private readonly select = serviceOrderListSelect;
+
+  private mapToListServiceOrder(order: ServiceOrderListRecord): ListServiceOrder {
+    return new ListServiceOrder(
+      order.id,
+      order.orderId,
+      order.subject,
+      order.description,
+      order.type,
+      order.department,
+      order.requester,
+      order.priority,
+      order.status,
+      order.createdAt,
+      order.patrimonyId,
+      order.reportedIssueId ?? undefined,
+      order.isExternal,
+      order.contactName ?? undefined,
+      order.contactPhone ?? undefined,
+      order.labEntryAt ?? undefined,
+      order.labExitAt ?? undefined,
+      order.labDescription ?? undefined,
+      order.labTechnicianId ?? undefined,
+      order.closedAt ?? undefined,
+      order.closedById ?? undefined,
+      order.serviceRating ?? undefined,
+      order.ratedAt ?? undefined,
+      order.attachment ?? undefined,
+      order.serviceOrderStatus?.[0]?.technician
+        ? new Technician(
+            order.serviceOrderStatus[0].technician.id,
+            order.serviceOrderStatus[0].technician.name,
+          )
+        : undefined,
+      order.serviceOrderStatus?.[0]?.status === 'CLOSED'
+        ? getResolutionDuration(
+            order.createdAt,
+            order.serviceOrderStatus?.[0]?.createdAt,
+          )
+        : undefined,
+    );
+  }
 
   async findAll(filters: FindAllFilters = {}): Promise<{
     data: ListServiceOrder[];
@@ -130,34 +201,7 @@ export class ServiceOrderRepository {
       ]);
 
       return {
-        data: data.map(
-          (order) =>
-            new ListServiceOrder(
-              order.id,
-              order.orderId,
-              order.subject,
-              order.description,
-              order.type,
-              order.department,
-              order.requester,
-              order.priority,
-              order.status,
-              order.createdAt,
-              order.attachment,
-              order.serviceOrderStatus?.[0]?.technician
-                ? new Technician(
-                    order.serviceOrderStatus[0].technician.id,
-                    order.serviceOrderStatus[0].technician.name,
-                  )
-                : null,
-              order.serviceOrderStatus?.[0]?.status === 'CLOSED'
-                ? getResolutionDuration(
-                    order.createdAt,
-                    order.serviceOrderStatus?.[0]?.createdAt,
-                  )
-                : null,
-            ),
-        ),
+        data: data.map((order) => this.mapToListServiceOrder(order)),
         total,
         page,
         totalPages: Math.ceil(total / limit),
@@ -194,34 +238,7 @@ export class ServiceOrderRepository {
         orderBy: { createdAt: 'desc' },
       });
 
-      return data.map(
-        (order) =>
-          new ListServiceOrder(
-            order.id,
-            order.orderId,
-            order.subject,
-            order.description,
-            order.type,
-            order.department,
-            order.requester,
-            order.priority,
-            order.status,
-            order.createdAt,
-            order.attachment,
-            order.serviceOrderStatus?.[0]?.technician
-              ? new Technician(
-                  order.serviceOrderStatus[0].technician.id,
-                  order.serviceOrderStatus[0].technician.name,
-                )
-              : null,
-            order.serviceOrderStatus?.[0]?.status === 'CLOSED'
-              ? getResolutionDuration(
-                  order.createdAt,
-                  order.serviceOrderStatus?.[0]?.createdAt,
-                )
-              : null,
-          ),
-      );
+      return data.map((order) => this.mapToListServiceOrder(order));
     } catch (error) {
       void this.logger.error(
         'ServiceOrderRepository.findManyForExport falhou',
@@ -282,33 +299,7 @@ export class ServiceOrderRepository {
       }),
     };
 
-    const select = {
-      id: true,
-      orderId: true,
-      subject: true,
-      description: true,
-      type: true,
-      department: true,
-      priority: true,
-      status: true,
-      attachment: true,
-      createdAt: true,
-      requester: true,
-      serviceOrderStatus: {
-        select: {
-          id: true,
-          status: true,
-          serviceOrderId: true,
-          note: true,
-          createdAt: true,
-          technician: {
-            select: { id: true, name: true },
-          },
-        },
-        orderBy: { createdAt: 'desc' as const },
-        take: 1,
-      },
-    };
+    const select = serviceOrderListSelect;
 
     try {
       const [data, total] = await Promise.all([
@@ -374,60 +365,57 @@ export class ServiceOrderRepository {
       lte: startCurrentPeriod,
     };
 
+    const lastStatusInclude = {
+      serviceOrderStatus: {
+        orderBy: { createdAt: 'desc' as const },
+        take: 1,
+      },
+    };
+
+    const resolutionHistoryInclude = {
+      serviceOrderStatus: {
+        where: { status: { in: ['OPEN' as const, 'CLOSED' as const] } },
+        orderBy: { createdAt: 'asc' as const },
+      },
+    };
+
     const [
       currentOrders,
       previousOrders,
-      totalPreviousClosedOrders,
+      previousOrdersWithLastStatus,
       closedOrdersWithHistory,
       previousClosedOrdersWithHistory,
     ] = await Promise.all([
       this.prisma.serviceOrder.findMany({
         where: { createdAt: currentDateFilter },
-        include: {
-          serviceOrderStatus: {
-            orderBy: { createdAt: 'desc' },
-            take: 1,
-          },
-        },
+        include: lastStatusInclude,
       }),
 
       this.prisma.serviceOrder.count({
         where: { createdAt: previousDateFilter },
       }),
 
-      this.prisma.serviceOrder.count({
-        where: {
-          createdAt: previousDateFilter,
-          serviceOrderStatus: { some: { status: 'CLOSED' } },
-        },
+      this.prisma.serviceOrder.findMany({
+        where: { createdAt: previousDateFilter },
+        include: lastStatusInclude,
       }),
 
-      // Ordens fechadas no período atual com histórico completo de status
+      // Histórico OPEN/CLOSED para tempo médio (período atual)
       this.prisma.serviceOrder.findMany({
         where: {
           createdAt: currentDateFilter,
           serviceOrderStatus: { some: { status: 'CLOSED' } },
         },
-        include: {
-          serviceOrderStatus: {
-            where: { status: { in: ['OPEN', 'CLOSED'] } },
-            orderBy: { createdAt: 'asc' },
-          },
-        },
+        include: resolutionHistoryInclude,
       }),
 
-      // Ordens fechadas no período anterior com histórico completo de status
+      // Histórico OPEN/CLOSED para tempo médio (período anterior)
       this.prisma.serviceOrder.findMany({
         where: {
           createdAt: previousDateFilter,
           serviceOrderStatus: { some: { status: 'CLOSED' } },
         },
-        include: {
-          serviceOrderStatus: {
-            where: { status: { in: ['OPEN', 'CLOSED'] } },
-            orderBy: { createdAt: 'asc' },
-          },
-        },
+        include: resolutionHistoryInclude,
       }),
     ]);
 
@@ -458,14 +446,31 @@ export class ServiceOrderRepository {
       return Number(avg.toFixed(1));
     };
 
-    const getLastStatus = (order: (typeof currentOrders)[0]) =>
-      order.serviceOrderStatus[0]?.status;
+    const getLastStatus = (order: {
+      serviceOrderStatus: { status: string }[];
+    }) => order.serviceOrderStatus[0]?.status;
 
-    const countByStatus = (orders: typeof currentOrders, status: string) =>
-      orders.filter((o) => getLastStatus(o) === status).length;
+    const countByStatus = (
+      orders: { serviceOrderStatus: { status: string }[] }[],
+      status: string,
+    ) => orders.filter((o) => getLastStatus(o) === status).length;
 
     const currentTotal = currentOrders.length;
     const currentClosed = countByStatus(currentOrders, 'CLOSED');
+    const previousTotal = previousOrdersWithLastStatus.length;
+    const previousClosed = countByStatus(
+      previousOrdersWithLastStatus,
+      'CLOSED',
+    );
+
+    const currentResolutionRate =
+      currentTotal > 0
+        ? Number(((currentClosed / currentTotal) * 100).toFixed(2))
+        : 0;
+    const previousResolutionRate =
+      previousTotal > 0
+        ? Number(((previousClosed / previousTotal) * 100).toFixed(2))
+        : 0;
 
     const currentAvgResolution = calcAvgResolutionInHours(
       closedOrdersWithHistory,
@@ -473,11 +478,6 @@ export class ServiceOrderRepository {
     const previousAvgResolution = calcAvgResolutionInHours(
       previousClosedOrdersWithHistory,
     );
-
-    const avgResolutionOrders =
-      currentTotal > 0
-        ? Number(((currentClosed / currentTotal) * 100).toFixed(2))
-        : 0;
 
     return {
       totalOrders: {
@@ -492,13 +492,14 @@ export class ServiceOrderRepository {
         inProgress: countByStatus(currentOrders, 'IN_PROGRESS'),
         closed: {
           total: currentClosed,
+          // Trend compara taxa de resolução (fechadas/total), não o volume absoluto
           percentage: this.calculatePercentageChange(
-            totalPreviousClosedOrders,
-            currentClosed,
+            previousResolutionRate,
+            currentResolutionRate,
           ),
         },
       },
-      avgResolutionOrders,
+      avgResolutionOrders: currentResolutionRate,
       avgResolutionTime: {
         hours: currentAvgResolution,
         percentage: this.calculatePercentageChange(
@@ -520,7 +521,7 @@ export class ServiceOrderRepository {
 
     const dateFilter = { gte: startPeriod, lte: now };
 
-    const [ordersByDepartment, statusCounts, closedOrdersWithHistory] =
+    const [ordersByDepartment, ordersWithLastStatus, closedOrdersWithHistory] =
       await Promise.all([
         this.prisma.serviceOrder.groupBy({
           by: ['department'],
@@ -528,10 +529,16 @@ export class ServiceOrderRepository {
           _count: { department: true },
         }),
 
-        this.prisma.serviceOrderStatus.groupBy({
-          by: ['status'],
+        // 1 OS = 1 status (último registro do histórico)
+        this.prisma.serviceOrder.findMany({
           where: { createdAt: dateFilter },
-          _count: { status: true },
+          select: {
+            serviceOrderStatus: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              select: { status: true },
+            },
+          },
         }),
 
         this.prisma.serviceOrder.findMany({
@@ -580,10 +587,14 @@ export class ServiceOrderRepository {
       ),
     }));
 
-    const totalOrders = statusCounts.reduce(
-      (sum, s) => sum + s._count.status,
-      0,
-    );
+    const statusCountMap = new Map<string, number>();
+    for (const order of ordersWithLastStatus) {
+      const status = order.serviceOrderStatus[0]?.status;
+      if (!status) continue;
+      statusCountMap.set(status, (statusCountMap.get(status) ?? 0) + 1);
+    }
+
+    const totalOrders = ordersWithLastStatus.length;
 
     return {
       ordersByDepartment: ordersByDepartment.map((i) => ({
@@ -591,23 +602,26 @@ export class ServiceOrderRepository {
         total: i._count.department,
       })),
 
-      percentageByStatus: statusCounts.map((i) => ({
-        status: i.status,
-        percentage:
-          totalOrders > 0
-            ? Number(((i._count.status / totalOrders) * 100).toFixed(2))
-            : 0,
-      })),
+      percentageByStatus: Array.from(statusCountMap.entries()).map(
+        ([status, count]) => ({
+          status,
+          percentage:
+            totalOrders > 0
+              ? Number(((count / totalOrders) * 100).toFixed(2))
+              : 0,
+        }),
+      ),
 
       avgResolutionTimeByDepartment,
     };
   }
 
-  async findById(id: string): Promise<ServiceOrder> {
+  async findById(id: string): Promise<ServiceOrder | null> {
     try {
-      return await this.prisma.serviceOrder.findUnique({
+      const order = await this.prisma.serviceOrder.findUnique({
         where: { id },
         select: {
+          ...serviceOrderListScalarSelect,
           id: true,
           orderId: true,
           subject: true,
@@ -619,6 +633,39 @@ export class ServiceOrderRepository {
           attachment: true,
           createdAt: true,
           requester: true,
+          patrimony: {
+            select: {
+              id: true,
+              inventoryNumber: true,
+              description: true,
+              locationName: true,
+              location: {
+                select: {
+                  id: true,
+                  name: true,
+                  address: true,
+                },
+              },
+            },
+          },
+          reportedIssue: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          closedBy: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          labTechnician: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
           serviceOrderStatus: {
             select: {
               id: true,
@@ -639,6 +686,80 @@ export class ServiceOrderRepository {
           },
         },
       });
+
+      if (!order) {
+        return null;
+      }
+
+      return new ServiceOrder(
+        order.id,
+        order.orderId,
+        order.subject,
+        order.description,
+        order.type,
+        order.department,
+        order.requester,
+        order.priority,
+        order.status,
+        order.serviceOrderStatus.map(
+          (status) =>
+            new ServiceOrderStatusEntity(
+              status.id,
+              status.serviceOrderId,
+              status.status,
+              status.createdAt,
+              status.note ?? undefined,
+              status.technician
+                ? new Technician(status.technician.id, status.technician.name)
+                : undefined,
+            ),
+        ),
+        order.createdAt,
+        order.patrimonyId,
+        order.reportedIssueId ?? undefined,
+        order.isExternal,
+        order.contactName ?? undefined,
+        order.contactPhone ?? undefined,
+        order.labEntryAt ?? undefined,
+        order.labExitAt ?? undefined,
+        order.labDescription ?? undefined,
+        order.labTechnicianId ?? undefined,
+        order.closedAt ?? undefined,
+        order.closedById ?? undefined,
+        order.serviceRating ?? undefined,
+        order.ratedAt ?? undefined,
+        order.attachment ?? undefined,
+        order.patrimony
+          ? new ServiceOrderPatrimonySummary(
+              order.patrimony.id,
+              order.patrimony.inventoryNumber,
+              order.patrimony.description,
+              order.patrimony.locationName,
+              order.patrimony.location
+                ? new ServiceOrderLocationSummary(
+                    order.patrimony.location.id,
+                    order.patrimony.location.name,
+                    order.patrimony.location.address,
+                  )
+                : undefined,
+            )
+          : undefined,
+        order.reportedIssue
+          ? new ServiceOrderReportedIssueSummary(
+              order.reportedIssue.id,
+              order.reportedIssue.name,
+            )
+          : undefined,
+        order.closedBy
+          ? new ServiceOrderUserSummary(order.closedBy.id, order.closedBy.name)
+          : undefined,
+        order.labTechnician
+          ? new ServiceOrderUserSummary(
+              order.labTechnician.id,
+              order.labTechnician.name,
+            )
+          : undefined,
+      );
     } catch (error) {
       void this.logger.error('ServiceOrderRepository.findById falhou', {
         id,
@@ -676,11 +797,22 @@ export class ServiceOrderRepository {
             requester: dto.requester,
             priority: dto.priority,
             attachment: dto.attachment,
+            isExternal: dto.isExternal ?? false,
+            contactName: dto.contactName ?? null,
+            contactPhone: dto.contactPhone ?? null,
             user: {
               connect: {
                 id: userId,
               },
             },
+            patrimony: {
+              connect: { id: dto.patrimonyId },
+            },
+            ...(dto.reportedIssueId && {
+              reportedIssue: {
+                connect: { id: dto.reportedIssueId },
+              },
+            }),
           },
         });
 
@@ -712,6 +844,21 @@ export class ServiceOrderRepository {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2003'
       ) {
+        const field = String(error.meta?.field_name ?? '');
+
+        if (field.includes('patrimony')) {
+          throw new NotFoundException(
+            (dto.patrimonyId ?? 'Patrimônio') + ' patrimônio não encontrado.',
+          );
+        }
+
+        if (field.includes('reported_issue') || field.includes('reportedIssue')) {
+          throw new NotFoundException(
+            (dto.reportedIssueId ?? 'Defeito') +
+              ' defeito apresentado não encontrado.',
+          );
+        }
+
         void this.logger.warn(
           'ServiceOrderRepository.create: usuário não encontrado',
           {
@@ -728,6 +875,118 @@ export class ServiceOrderRepository {
         'Erro ao criar status da ordem de serviço: ' + error.message,
       );
     }
+  }
+
+  async findForPdf(id: string): Promise<{
+    orderId: string;
+    subject: string;
+    description: string;
+    type: string;
+    department: string;
+    requester: string;
+    priority: string;
+    isExternal: boolean;
+    contactName: string | null;
+    contactPhone: string | null;
+    labDescription: string | null;
+    createdAt: Date;
+    patrimony: {
+      inventoryNumber: string;
+      description: string;
+      department: string;
+      locationName: string | null;
+      patrimonyTypeName: string | null;
+      location: { name: string; address: string | null } | null;
+    } | null;
+    reportedIssue: { name: string } | null;
+    closedBy: { name: string } | null;
+    labTechnician: { name: string } | null;
+    serviceOrderStatus: {
+      status: string;
+      createdAt: Date;
+      technician: { name: string } | null;
+    }[];
+  } | null> {
+    const order = await this.prisma.serviceOrder.findUnique({
+      where: { id },
+      select: {
+        orderId: true,
+        subject: true,
+        description: true,
+        type: true,
+        department: true,
+        requester: true,
+        priority: true,
+        isExternal: true,
+        contactName: true,
+        contactPhone: true,
+        labDescription: true,
+        createdAt: true,
+        patrimony: {
+          select: {
+            inventoryNumber: true,
+            description: true,
+            department: true,
+            locationName: true,
+            patrimonyType: { select: { name: true } },
+            location: { select: { name: true, address: true } },
+          },
+        },
+        reportedIssue: { select: { name: true } },
+        closedBy: { select: { name: true } },
+        labTechnician: { select: { name: true } },
+        serviceOrderStatus: {
+          select: {
+            status: true,
+            createdAt: true,
+            technician: { select: { name: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!order) {
+      return null;
+    }
+
+    return {
+      orderId: order.orderId,
+      subject: order.subject,
+      description: order.description,
+      type: order.type,
+      department: order.department,
+      requester: order.requester,
+      priority: order.priority,
+      isExternal: order.isExternal,
+      contactName: order.contactName,
+      contactPhone: order.contactPhone,
+      labDescription: order.labDescription,
+      createdAt: order.createdAt,
+      patrimony: order.patrimony
+        ? {
+            inventoryNumber: order.patrimony.inventoryNumber,
+            description: order.patrimony.description,
+            department: order.patrimony.department,
+            locationName: order.patrimony.locationName,
+            patrimonyTypeName: order.patrimony.patrimonyType?.name ?? null,
+            location: order.patrimony.location
+              ? {
+                  name: order.patrimony.location.name,
+                  address: order.patrimony.location.address,
+                }
+              : null,
+          }
+        : null,
+      reportedIssue: order.reportedIssue,
+      closedBy: order.closedBy,
+      labTechnician: order.labTechnician,
+      serviceOrderStatus: order.serviceOrderStatus.map((s) => ({
+        status: s.status,
+        createdAt: s.createdAt,
+        technician: s.technician,
+      })),
+    };
   }
 
   private calculatePercentageChange(previous: number, current: number): number {

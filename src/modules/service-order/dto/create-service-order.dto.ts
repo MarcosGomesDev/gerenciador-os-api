@@ -1,12 +1,18 @@
 import { Sanitize } from '@common/decorators';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+    IsBoolean,
+    IsEnum,
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+} from 'class-validator';
 import { Department, departments } from 'types/department';
 import {
-  serviceOrderPriorities,
-  ServiceOrderPriority,
-  ServiceOrderType,
-  serviceOrderTypes,
+    serviceOrderPriorities,
+    ServiceOrderPriority,
+    ServiceOrderType,
+    serviceOrderTypes,
 } from 'types/service-order';
 
 export class CreateServiceOrderDTO {
@@ -50,6 +56,32 @@ export class CreateServiceOrderDTO {
   @IsNotEmpty()
   @IsEnum(departments, { message: 'Departamento inválido' })
   department: Department;
+
+  @IsNotEmpty()
+  @IsString()
+  patrimonyId: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  reportedIssueId?: string;
+
+  @ApiProperty({ required: false, default: false })
+  @IsOptional()
+  @IsBoolean()
+  isExternal?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @Sanitize()
+  contactName?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @Sanitize()
+  contactPhone?: string;
 }
 
 export class CreateServiceOrderWithFileDTO extends CreateServiceOrderDTO {

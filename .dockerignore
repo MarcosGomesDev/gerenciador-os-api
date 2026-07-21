@@ -7,7 +7,7 @@
 .agents
 
 node_modules
-dist
+/dist
 coverage
 
 *.log

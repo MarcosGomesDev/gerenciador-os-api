@@ -10,6 +10,7 @@ datasource db {
 
 model User {
   id                   String               @id @default(uuid())
+  legacyId             Int?                 @unique @map("legacy_id")
   name                 String
   email                String               @unique
   taxIdentifier        String               @unique @map("tax_identifier")
@@ -19,12 +20,22 @@ model User {
   isActive             Boolean              @default(true) @map("is_active")
   isFirstAccess        Boolean              @default(true) @map("is_first_access")
   isDeleted            Boolean              @default(false) @map("is_deleted")
+  locationId           String?              @map("location_id")
+  phone                String?
+  mobile               String?
+  extension            String?
+  photo                String?
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   deletedAt            DateTime?            @map("deleted_at")
+  location             Location?            @relation(fields: [locationId], references: [id])
   serviceOrders        ServiceOrder[]
   serviceOrderStatuses ServiceOrderStatus[]
   historics            Historic[]
+  patrimoniesCreated   Patrimony[]          @relation("PatrimonyCreatedBy")
+  patrimoniesUpdated   Patrimony[]          @relation("PatrimonyUpdatedBy")
+  serviceOrdersClosed  ServiceOrder[]       @relation("ServiceOrderClosedBy")
+  serviceOrdersLab     ServiceOrder[]       @relation("ServiceOrderLabTechnician")
 
   @@map("users")
 }
@@ -40,6 +51,75 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
+model LocationType {
+  id        String     @id @default(uuid())
+  legacyId  Int?       @unique @map("legacy_id")
+  name      String
+  locations Location[]
+
+  @@map("location_types")
+}
+
+model Location {
+  id             String       @id @default(uuid())
+  legacyId       Int?         @unique @map("legacy_id")
+  name           String
+  address        String?
+  directorate    String?
+  phone          String?
+  mobile         String?
+  department     Department
+  locationTypeId String       @map("location_type_id")
+  locationType   LocationType @relation(fields: [locationTypeId], references: [id])
+  users          User[]
+  patrimonies    Patrimony[]
+
+  @@map("locations")
+}
+
+model PatrimonyType {
+  id          String      @id @default(uuid())
+  legacyId    Int?        @unique @map("legacy_id")
+  name        String
+  patrimonies Patrimony[]
+
+  @@map("patrimony_types")
+}
+
+model Patrimony {
+  id              String             @id @default(uuid())
+  legacyId        Int?               @unique @map("legacy_id")
+  inventoryNumber String             @map("inventory_number")
+  description     String
+  situation       PatrimonySituation
+  locationName    String?            @map("location_name")
+  department      Department
+  locationId      String             @map("location_id")
+  patrimonyTypeId String             @map("patrimony_type_id")
+  createdById     String?            @map("created_by_id")
+  updatedById     String?            @map("updated_by_id")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  isDeleted       Boolean            @default(false) @map("is_deleted")
+  deletedAt       DateTime?          @map("deleted_at")
+  location        Location           @relation(fields: [locationId], references: [id])
+  patrimonyType   PatrimonyType      @relation(fields: [patrimonyTypeId], references: [id])
+  createdBy       User?              @relation("PatrimonyCreatedBy", fields: [createdById], references: [id])
+  updatedBy       User?              @relation("PatrimonyUpdatedBy", fields: [updatedById], references: [id])
+  serviceOrders   ServiceOrder[]
+
+  @@map("patrimonies")
+}
+
+model ReportedIssue {
+  id            String         @id @default(uuid())
+  legacyId      Int?           @unique @map("legacy_id")
+  name          String
+  serviceOrders ServiceOrder[]
+
+  @@map("reported_issues")
+}
+
 model ServiceOrder {
   id                 String               @id @default(uuid())
   orderId            String               @unique @map("order_id")
@@ -50,11 +130,28 @@ model ServiceOrder {
   requester          String
   priority           OrderPriority
   status             OrderStatus
+  patrimonyId        String               @map("patrimony_id")
+  reportedIssueId    String?              @map("reported_issue_id")
+  isExternal         Boolean              @default(false) @map("is_external")
+  contactName        String?              @map("contact_name")
+  contactPhone       String?              @map("contact_phone")
+  serviceRating      Int?                 @map("service_rating")
+  ratedAt            DateTime?            @map("rated_at")
+  closedAt           DateTime?            @map("closed_at")
+  closedById         String?              @map("closed_by_id")
+  labEntryAt         DateTime?            @map("lab_entry_at")
+  labExitAt          DateTime?            @map("lab_exit_at")
+  labDescription     String?              @map("lab_description")
+  labTechnicianId    String?              @map("lab_technician_id")
   serviceOrderStatus ServiceOrderStatus[]
   attachment         String?              @map("attachment")
   createdAt          DateTime             @default(now())
   user               User?                @relation(fields: [userId], references: [id])
   userId             String?
+  patrimony          Patrimony            @relation(fields: [patrimonyId], references: [id])
+  reportedIssue      ReportedIssue?       @relation(fields: [reportedIssueId], references: [id])
+  closedBy           User?                @relation("ServiceOrderClosedBy", fields: [closedById], references: [id])
+  labTechnician      User?                @relation("ServiceOrderLabTechnician", fields: [labTechnicianId], references: [id])
   historics          Historic[]
 
   @@map("service_order")
@@ -92,7 +189,16 @@ enum ServiceOrderType {
 enum OrderStatus {
   OPEN
   IN_PROGRESS
+  IN_LABORATORY
+  LAB_COMPLETED
   CLOSED
+  CANCELLED
+}
+
+enum PatrimonySituation {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
 }
 
 enum Role {

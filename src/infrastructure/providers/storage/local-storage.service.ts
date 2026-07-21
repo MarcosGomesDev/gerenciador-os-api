@@ -1,13 +1,22 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { promises as fsp } from 'node:fs';
-import { extname, join, normalize, sep } from 'node:path';
+import { NotFoundException } from '@common/filters';
+import { createReadStream, promises as fsp } from 'node:fs';
+import { basename, extname, join, normalize, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import type { ReadStream } from 'node:fs';
 
 export type StoredFile = Readonly<{
   relativePath: string;
   originalName: string;
   mimeType: string;
   sizeBytes: number;
+}>;
+
+export type ResolvedStoredFile = Readonly<{
+  absolutePath: string;
+  fileName: string;
+  mimeType: string;
+  createReadStream: () => ReadStream;
 }>;
 
 export type MulterFile = Readonly<{
@@ -76,6 +85,40 @@ export class LocalStorageService {
   async remove(relativePath: string): Promise<void> {
     const abs = this.safeJoin(this.rootDir, relativePath);
     await fsp.unlink(abs).catch(() => undefined);
+  }
+
+  async resolve(relativePath: string): Promise<ResolvedStoredFile> {
+    const normalizedRel = relativePath.replace(/\\/g, '/');
+    const absolutePath = this.safeJoin(this.rootDir, normalizedRel);
+
+    try {
+      await fsp.access(absolutePath);
+    } catch {
+      throw new NotFoundException('Arquivo não encontrado');
+    }
+
+    const fileName = basename(absolutePath);
+    const mimeType = this.mimeFromExt(extname(fileName));
+
+    return {
+      absolutePath,
+      fileName,
+      mimeType,
+      createReadStream: () => createReadStream(absolutePath),
+    };
+  }
+
+  private mimeFromExt(ext: string): string {
+    const byExt: Record<string, string> = {
+      '.pdf': 'application/pdf',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.webp': 'image/webp',
+      '.gif': 'image/gif',
+    };
+
+    return byExt[ext.toLowerCase()] ?? 'application/octet-stream';
   }
 
   private guessExt(originalName: string, mimeType: string): string {

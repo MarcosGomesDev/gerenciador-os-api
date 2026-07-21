@@ -1,6 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CreateServiceOrderStatusDTO } from '../dto';
-import { ServiceOrderStatusRepository } from '../repository';
+import {
+  ServiceOrderLabUpdates,
+  ServiceOrderStatusRepository,
+} from '../repository';
 
 @Injectable()
 export class CreateServiceOrderStatusUseCase {
@@ -9,7 +12,10 @@ export class CreateServiceOrderStatusUseCase {
     private readonly serviceOrderStatusRepository: ServiceOrderStatusRepository,
   ) {}
 
-  async execute(dto: CreateServiceOrderStatusDTO) {
-    return await this.serviceOrderStatusRepository.create(dto);
+  async execute(
+    dto: CreateServiceOrderStatusDTO,
+    orderUpdates?: ServiceOrderLabUpdates,
+  ) {
+    return await this.serviceOrderStatusRepository.create(dto, orderUpdates);
   }
 }
