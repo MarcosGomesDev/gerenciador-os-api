@@ -171,7 +171,7 @@ export class ServiceOrderController {
     );
   }
 
-  @Roles('TECHNICIAN')
+  @Roles('ADMIN', 'TECHNICIAN')
   @Patch('/:id')
   async update(
     @Param('id') id: string,
