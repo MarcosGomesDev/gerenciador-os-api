@@ -23,14 +23,20 @@ export class CreateTokenPasswordUseCase {
     });
 
     if (process.env.NODE_ENV === 'prod') {
-      const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '') ?? '';
+      const rawFrontendUrl = process.env.FRONTEND_URL?.trim() ?? '';
+      const frontendUrl = rawFrontendUrl
+        ? (/^https?:\/\//i.test(rawFrontendUrl)
+            ? rawFrontendUrl
+            : `https://${rawFrontendUrl}`
+          ).replace(/\/$/, '')
+        : '';
       const resetLink = frontendUrl
         ? `${frontendUrl}/reset-password`
         : undefined;
 
       await this.mailService.sendMail({
         to: email,
-        subject: 'Recuperação de senha',
+        subject: 'Redefinição de senha — Sistema de Ordem de Serviço',
         template: 'reset-password',
         context: {
           token: generatedToken,

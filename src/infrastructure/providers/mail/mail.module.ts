@@ -5,38 +5,59 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { join } from 'path';
 import { MailService } from './mail.service';
 
+function parseBoolean(
+  value: string | boolean | undefined,
+  fallback: boolean,
+): boolean {
+  if (value === undefined) return fallback;
+  if (typeof value === 'boolean') return value;
+  return value === 'true' || value === '1';
+}
+
 @Global()
 @Module({
   imports: [
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        transport: {
-          host: config.get<string>('SMTP_HOST'),
-          port: config.get<number>('SMTP_PORT') ?? 587,
-          secure: true,
-          name:
-            config.get<string>('SMTP_EHLO_NAME') ??
-            config.get<string>('SMTP_HOST'),
-          auth: {
-            user: config.get<string>('SMTP_USER'),
-            pass: config.get<string>('SMTP_PASS'),
+      useFactory: (config: ConfigService) => {
+        const host = config.get<string>('SMTP_HOST');
+        const port = Number(config.get('SMTP_PORT') ?? 465);
+        const user = config.get<string>('SMTP_USER');
+        const pass = config.get<string>('SMTP_PASS');
+        const secure = parseBoolean(
+          config.get('SMTP_SECURE'),
+          port === 465,
+        );
+        const rejectUnauthorized = parseBoolean(
+          config.get('SMTP_REJECT_UNAUTHORIZED'),
+          true,
+        );
+
+        return {
+          transport: {
+            host,
+            port,
+            secure,
+            name:
+              config.get<string>('SMTP_EHLO_NAME') ??
+              host,
+            auth: user ? { user, pass } : undefined,
+            tls: {
+              servername: host,
+              rejectUnauthorized,
+            },
           },
-          // requireTLS: true,
-          tls: {
-            servername: config.get<string>('SMTP_HOST'),
+          defaults: {
+            from: `"${config.get('SMTP_FROM_NAME') ?? 'No Reply'}" <${config.get('SMTP_FROM_EMAIL') ?? user}>`,
           },
-        },
-        defaults: {
-          from: `"${config.get('SMTP_FROM_NAME') ?? 'No Reply'}" <${config.get('SMTP_FROM_EMAIL') ?? config.get('SMTP_USER')}>`,
-        },
-        template: {
-          dir: join(__dirname, 'templates'),
-          adapter: new PugAdapter(),
-          options: { strict: true },
-        },
-      }),
+          template: {
+            dir: join(__dirname, 'templates'),
+            adapter: new PugAdapter(),
+            options: { strict: true },
+          },
+        };
+      },
     }),
   ],
   providers: [MailService],
