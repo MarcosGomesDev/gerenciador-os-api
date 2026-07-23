@@ -6,4 +6,5 @@ export * from './find-user-by-email.use-case';
 export * from './find-user-by-id.use-case';
 export * from './find-user-by-tax-identifier.use-case';
 export * from './find-user-role.use-case';
+export * from './update-user-status.use-case';
 export * from './update-user.use-case';

@@ -231,13 +231,29 @@ export class UserRepository {
     }
   }
 
-  async update(id: string, data: UpdateUserDTO) {
+  async update(id: string, data: UpdateUserDTO, userId: string) {
     try {
       await this.prisma.user.update({
         where: { id },
-        data,
+        data: {
+          ...(data.isActive !== undefined && { isActive: data.isActive }),
+          ...(data.name !== undefined && { name: data.name }),
+          ...(data.email !== undefined && { email: data.email }),
+          ...(data.taxIdentifier !== undefined && {
+            taxIdentifier: data.taxIdentifier,
+          }),
+          ...(data.role !== undefined && { role: data.role }),
+          ...(data.department !== undefined && { department: data.department }),
+          ...(data.password !== undefined && { password: data.password }),
+          ...(data.isFirstAccess !== undefined && {
+            isFirstAccess: data.isFirstAccess,
+          }),
+        },
       });
-      void this.logger.info('Usuário atualizado', { userId: id });
+      void this.logger.info('Usuário atualizado', {
+        userId: id,
+        updatedBy: userId,
+      });
     } catch (error) {
       void this.logger.error('UserRepository.update falhou', {
         userId: id,
@@ -253,6 +269,8 @@ export class UserRepository {
         where: { id },
         data: {
           isActive: false,
+          isDeleted: true,
+          deletedAt: new Date(),
         },
       });
       void this.logger.info('Usuário excluído (soft delete)', { userId: id });

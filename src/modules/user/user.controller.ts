@@ -9,12 +9,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { UpdateUserDTO } from './dto';
+import { UpdateUserDTO, UpdateUserStatusDTO } from './dto';
 import {
   DeleteUserUseCase,
   FindAllTechniciansUseCase,
   FindAllUsersUseCase,
   FindUserByIdUseCase,
+  UpdateUserStatusUseCase,
   UpdateUserUseCase,
 } from './use-cases';
 
@@ -27,6 +28,7 @@ export class UserController {
     private readonly findAllTechniciansUseCase: FindAllTechniciansUseCase,
     private readonly findUserByIdUseCase: FindUserByIdUseCase,
     private readonly updateUserUseCase: UpdateUserUseCase,
+    private readonly updateUserStatusUseCase: UpdateUserStatusUseCase,
     private readonly deleteUserUseCase: DeleteUserUseCase,
   ) {}
 
@@ -71,10 +73,20 @@ export class UserController {
   @Patch('/:id')
   async update(
     @Param('id') id: string,
-    @Body() dto: UpdateUserDTO,
+    @Body() dto: Omit<UpdateUserDTO, 'isActive'>,
     @UserId() userId: string,
   ) {
     await this.updateUserUseCase.execute(id, dto, userId);
+  }
+
+  @Roles('ADMIN')
+  @Patch('/:id/status')
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserStatusDTO,
+    @UserId() userId: string,
+  ) {
+    await this.updateUserStatusUseCase.execute(id, dto, userId);
   }
 
   @Roles('ADMIN')

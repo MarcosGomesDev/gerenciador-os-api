@@ -1,3 +1,4 @@
+import { BadRequestException } from '@common/filters';
 import { Inject, Injectable } from '@nestjs/common';
 import { UserRepository } from '../repository';
 import { FindUserByIdUseCase } from './find-user-by-id.use-case';
@@ -11,7 +12,13 @@ export class DeleteUserUseCase {
   ) {}
 
   async execute(id: string) {
-    await this.findByIdUseCase.execute(id);
+    const user = await this.findByIdUseCase.execute(id);
+
+    if (user.isActive) {
+      throw new BadRequestException(
+        'Não é possível excluir um usuário ativo. Desative-o antes de excluir.',
+      );
+    }
 
     return this.userRepository.delete(id);
   }

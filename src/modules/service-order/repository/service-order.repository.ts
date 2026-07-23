@@ -2,7 +2,10 @@ import { BadRequestException, NotFoundException } from '@common/filters';
 import { generateId, getResolutionDuration } from '@common/utils';
 import { LoggerService } from '@infrastructure/log';
 import { PrismaService } from '@infrastructure/prisma';
-import { Technician, ServiceOrderStatusEntity } from '@modules/service-order-status';
+import {
+  ServiceOrderStatusEntity,
+  Technician,
+} from '@modules/service-order-status';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Department } from 'types/department';
@@ -121,7 +124,9 @@ export class ServiceOrderRepository {
 
   private readonly select = serviceOrderListSelect;
 
-  private mapToListServiceOrder(order: ServiceOrderListRecord): ListServiceOrder {
+  private mapToListServiceOrder(
+    order: ServiceOrderListRecord,
+  ): ListServiceOrder {
     return new ListServiceOrder(
       order.id,
       order.orderId,
@@ -778,13 +783,21 @@ export class ServiceOrderRepository {
     userId: string,
   ): Promise<void> {
     try {
-      const countOS = await this.prisma.serviceOrder.count();
-
       const year = new Date().getFullYear();
-      const paddedNumber = String(countOS + 1).padStart(3, '0');
-      const orderId = `OS-${year}-${paddedNumber}`;
+      const prefix = `OS-${year}-`;
+      let createdOrderId = '';
 
       await this.prisma.$transaction(async (tx) => {
+        const [result] = await tx.$queryRaw<{ max_seq: number | null }[]>`
+          SELECT MAX(CAST(SPLIT_PART(order_id, '-', 3) AS INTEGER)) AS max_seq
+          FROM service_order
+          WHERE order_id LIKE ${prefix + '%'}
+        `;
+
+        const nextNumber = (result?.max_seq ?? 0) + 1;
+        const orderId = `${prefix}${String(nextNumber).padStart(3, '0')}`;
+        createdOrderId = orderId;
+
         const serviceOrder = await tx.serviceOrder.create({
           data: {
             id: generateId(),
@@ -836,7 +849,7 @@ export class ServiceOrderRepository {
       });
 
       void this.logger.info('Ordem de serviço criada', {
-        orderId,
+        orderId: createdOrderId,
         userId,
       });
     } catch (error) {
@@ -852,7 +865,10 @@ export class ServiceOrderRepository {
           );
         }
 
-        if (field.includes('reported_issue') || field.includes('reportedIssue')) {
+        if (
+          field.includes('reported_issue') ||
+          field.includes('reportedIssue')
+        ) {
           throw new NotFoundException(
             (dto.reportedIssueId ?? 'Defeito') +
               ' defeito apresentado não encontrado.',

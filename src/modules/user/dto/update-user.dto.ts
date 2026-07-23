@@ -58,4 +58,8 @@ export class UpdateUserDTO {
   @IsOptional()
   @IsBoolean()
   isFirstAccess?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

@@ -9,6 +9,7 @@ import {
   FindUserByIdUseCase,
   FindUserByTaxIdentifierUseCase,
   FindUserRoleUseCase,
+  UpdateUserStatusUseCase,
   UpdateUserUseCase,
 } from './use-cases';
 import { UserController } from './user.controller';
@@ -25,6 +26,7 @@ import { UserController } from './user.controller';
     FindUserByTaxIdentifierUseCase,
     CreateUserUseCase,
     UpdateUserUseCase,
+    UpdateUserStatusUseCase,
     DeleteUserUseCase,
     UserRepository,
     {
