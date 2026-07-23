@@ -25,10 +25,7 @@ function parseBoolean(
         const port = Number(config.get('SMTP_PORT') ?? 465);
         const user = config.get<string>('SMTP_USER');
         const pass = config.get<string>('SMTP_PASS');
-        const secure = parseBoolean(
-          config.get('SMTP_SECURE'),
-          port === 465,
-        );
+        const secure = parseBoolean(config.get('SMTP_SECURE'), port === 465);
         const rejectUnauthorized = parseBoolean(
           config.get('SMTP_REJECT_UNAUTHORIZED'),
           true,
@@ -39,9 +36,7 @@ function parseBoolean(
             host,
             port,
             secure,
-            name:
-              config.get<string>('SMTP_EHLO_NAME') ??
-              host,
+            name: config.get<string>('SMTP_EHLO_NAME') ?? host,
             auth: user ? { user, pass } : undefined,
             tls: {
               servername: host,
