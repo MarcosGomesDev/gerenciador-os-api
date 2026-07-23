@@ -253,8 +253,6 @@ export class UserRepository {
         where: { id },
         data: {
           isActive: false,
-          isDeleted: true,
-          deletedAt: new Date(),
         },
       });
       void this.logger.info('Usuário excluído (soft delete)', { userId: id });
