@@ -58,7 +58,7 @@ async function bootstrap() {
 
       // Desenvolvimento: permitir tudo se não houver origins configuradas
       if (allowedOrigins.length === 0) {
-        if (process.env.NODE_ENV === 'prod') {
+        if (process.env.NODE_ENV === 'production') {
           console.warn('⚠️  ALLOWED_ORIGINS não configurado em produção!');
           return callback(null, false);
         }

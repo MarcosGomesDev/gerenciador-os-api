@@ -22,7 +22,7 @@ export class CreateTokenPasswordUseCase {
       token: encriptToken,
     });
 
-    if (process.env.NODE_ENV === 'prod') {
+    if (process.env.NODE_ENV === 'production') {
       const rawFrontendUrl = process.env.FRONTEND_URL?.trim() ?? '';
       const frontendUrl = rawFrontendUrl
         ? (/^https?:\/\//i.test(rawFrontendUrl)

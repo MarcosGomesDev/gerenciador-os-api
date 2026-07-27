@@ -36,7 +36,7 @@ RUN yarn install \
 FROM node:24-alpine AS runtime
 ARG VERSION="1.0.0"
 ENV VERSION=$VERSION
-ENV NODE_ENV=prod
+ENV NODE_ENV=production
 WORKDIR /home/node/app
 
 RUN apk add --no-cache \

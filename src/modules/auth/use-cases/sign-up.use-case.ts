@@ -12,7 +12,7 @@ export class SignUpUseCase {
   async execute(dto: CreateUserDTO, userId: string) {
     const newUser = await this.createUserUseCase.execute(dto, userId);
 
-    if (process.env.NODE_ENV === 'prod') {
+    if (process.env.NODE_ENV === 'production') {
       const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '') ?? '';
       await this.mailService.sendMail({
         to: newUser.email,
