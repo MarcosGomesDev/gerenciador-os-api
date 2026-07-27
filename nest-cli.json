@@ -12,11 +12,10 @@
     "assets": [
       {
         "include": "infrastructure/providers/mail/templates/**/*",
-        "outDir": "dist/infrastructure/providers/mail/templates"
+        "watchAssets": true
       },
       {
         "include": "modules/service-order/pdf/assets/**/*",
-        "outDir": "dist/modules/service-order/pdf/assets",
         "watchAssets": true
       }
     ]

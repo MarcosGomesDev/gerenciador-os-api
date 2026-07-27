@@ -14,7 +14,11 @@ export type MailAttachment = Readonly<{
 
 const BRASAO_CANDIDATES = [
   join(process.cwd(), 'assets', 'pdf', 'logo-prefeitura.png'),
-  join(process.cwd(), 'src/modules/service-order/pdf/assets', 'logo-prefeitura.png'),
+  join(
+    process.cwd(),
+    'src/modules/service-order/pdf/assets',
+    'logo-prefeitura.png',
+  ),
   join(
     process.cwd(),
     'dist/modules/service-order/pdf/assets',
