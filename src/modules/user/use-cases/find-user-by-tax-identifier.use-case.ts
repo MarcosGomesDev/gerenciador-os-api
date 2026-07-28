@@ -10,7 +10,11 @@ export class FindUserByTaxIdentifierUseCase {
   ) {}
 
   async execute(taxIdentifier: string) {
-    const user = await this.userRepository.findByTaxIdentifier(taxIdentifier);
+    const normalizedTaxIdentifier = (taxIdentifier ?? '').replace(/\D/g, '');
+
+    const user = await this.userRepository.findByTaxIdentifier(
+      normalizedTaxIdentifier,
+    );
 
     if (!user) {
       throw new NotFoundException('Usuário não encontrado');
