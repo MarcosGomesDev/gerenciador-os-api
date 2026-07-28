@@ -37,4 +37,7 @@ set -eu
 
 # restore_backup_if_needed
 
+echo "Aplicando migrations..."
+npx prisma migrate deploy
+
 exec node dist/main.js
