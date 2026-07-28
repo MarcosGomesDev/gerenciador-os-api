@@ -3,12 +3,14 @@ import { UserRepository } from './repository';
 import {
   CreateUserUseCase,
   DeleteUserUseCase,
+  FindAllDeletedUsersUseCase,
   FindAllTechniciansUseCase,
   FindAllUsersUseCase,
   FindUserByEmailUseCase,
   FindUserByIdUseCase,
   FindUserByTaxIdentifierUseCase,
   FindUserRoleUseCase,
+  RestoreUserUseCase,
   UpdateUserStatusUseCase,
   UpdateUserUseCase,
 } from './use-cases';
@@ -19,6 +21,7 @@ import { UserController } from './user.controller';
   controllers: [UserController],
   providers: [
     FindAllUsersUseCase,
+    FindAllDeletedUsersUseCase,
     FindAllTechniciansUseCase,
     FindUserByIdUseCase,
     FindUserByEmailUseCase,
@@ -28,6 +31,7 @@ import { UserController } from './user.controller';
     UpdateUserUseCase,
     UpdateUserStatusUseCase,
     DeleteUserUseCase,
+    RestoreUserUseCase,
     UserRepository,
     {
       provide: 'UserRepository',

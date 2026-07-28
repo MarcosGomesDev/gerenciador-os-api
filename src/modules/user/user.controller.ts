@@ -12,9 +12,11 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UpdateUserDTO, UpdateUserStatusDTO } from './dto';
 import {
   DeleteUserUseCase,
+  FindAllDeletedUsersUseCase,
   FindAllTechniciansUseCase,
   FindAllUsersUseCase,
   FindUserByIdUseCase,
+  RestoreUserUseCase,
   UpdateUserStatusUseCase,
   UpdateUserUseCase,
 } from './use-cases';
@@ -25,11 +27,13 @@ import {
 export class UserController {
   constructor(
     private readonly findAllUsersUseCase: FindAllUsersUseCase,
+    private readonly findAllDeletedUsersUseCase: FindAllDeletedUsersUseCase,
     private readonly findAllTechniciansUseCase: FindAllTechniciansUseCase,
     private readonly findUserByIdUseCase: FindUserByIdUseCase,
     private readonly updateUserUseCase: UpdateUserUseCase,
     private readonly updateUserStatusUseCase: UpdateUserStatusUseCase,
     private readonly deleteUserUseCase: DeleteUserUseCase,
+    private readonly restoreUserUseCase: RestoreUserUseCase,
   ) {}
 
   @Roles('ADMIN')
@@ -61,6 +65,20 @@ export class UserController {
   }
 
   @Roles('ADMIN')
+  @Get('/deleted')
+  async getDeletedList(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('searchTerm') searchTerm?: string,
+  ) {
+    return await this.findAllDeletedUsersUseCase.execute({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      searchTerm,
+    });
+  }
+
+  @Roles('ADMIN')
   @Get('/:id')
   async findById(@Param('id') id: string) {
     const user = await this.findUserByIdUseCase.execute(id);
@@ -87,6 +105,12 @@ export class UserController {
     @UserId() userId: string,
   ) {
     await this.updateUserStatusUseCase.execute(id, dto, userId);
+  }
+
+  @Roles('ADMIN')
+  @Patch('/:id/restore')
+  async restore(@Param('id') id: string) {
+    return await this.restoreUserUseCase.execute(id);
   }
 
   @Roles('ADMIN')

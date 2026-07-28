@@ -75,6 +75,68 @@ export class UserRepository {
     }
   }
 
+  async findAllDeleted(filters: FindAllUsersFilters = {}): Promise<{
+    data: ListUser[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    try {
+      const { page = 1, limit = 25, searchTerm } = filters;
+      const skip = (page - 1) * limit;
+
+      const where = {
+        isDeleted: true,
+        ...(searchTerm && {
+          OR: [
+            {
+              name: {
+                contains: searchTerm,
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              email: {
+                contains: searchTerm,
+                mode: 'insensitive' as const,
+              },
+            },
+          ],
+        }),
+      };
+
+      const [data, total] = await Promise.all([
+        this.prisma.user.findMany({
+          where,
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            department: true,
+            isActive: true,
+          },
+          skip,
+          take: limit,
+          orderBy: { name: 'asc' },
+        }),
+        this.prisma.user.count({ where }),
+      ]);
+
+      return {
+        data,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      void this.logger.error('UserRepository.findAllDeleted falhou', {
+        error: String(error),
+      });
+      throw new InternalServerErrorException(error);
+    }
+  }
+
   async findTechnicians(): Promise<{ id: string; name: string }[]> {
     try {
       const technicians = await this.prisma.user.findMany({
@@ -121,6 +183,39 @@ export class UserRepository {
       return user;
     } catch (error) {
       void this.logger.error('UserRepository.findById falhou', {
+        id,
+        error: String(error),
+      });
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  async findByIdIncludingDeleted(id: string) {
+    try {
+      const user = await this.prisma.user.findFirst({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          taxIdentifier: true,
+          password: true,
+          role: true,
+          department: true,
+          isActive: true,
+          isFirstAccess: true,
+          isDeleted: true,
+          deletedAt: true,
+        },
+      });
+
+      if (!user) {
+        return null;
+      }
+
+      return user;
+    } catch (error) {
+      void this.logger.error('UserRepository.findByIdIncludingDeleted falhou', {
         id,
         error: String(error),
       });
@@ -276,6 +371,26 @@ export class UserRepository {
       void this.logger.info('Usuário excluído (soft delete)', { userId: id });
     } catch (error) {
       void this.logger.error('UserRepository.delete falhou', {
+        userId: id,
+        error: String(error),
+      });
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  async restore(id: string) {
+    try {
+      await this.prisma.user.update({
+        where: { id },
+        data: {
+          isDeleted: false,
+          deletedAt: null,
+          isActive: true,
+        },
+      });
+      void this.logger.info('Usuário reativado', { userId: id });
+    } catch (error) {
+      void this.logger.error('UserRepository.restore falhou', {
         userId: id,
         error: String(error),
       });
