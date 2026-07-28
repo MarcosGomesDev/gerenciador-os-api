@@ -798,6 +798,15 @@ export class ServiceOrderRepository {
         const orderId = `${prefix}${String(nextNumber).padStart(3, '0')}`;
         createdOrderId = orderId;
 
+        const actor = await tx.user.findUnique({
+          where: { id: userId },
+          select: { name: true },
+        });
+
+        if (!actor) {
+          throw new NotFoundException(userId + ' usuário não encontrado.');
+        }
+
         const serviceOrder = await tx.serviceOrder.create({
           data: {
             id: generateId(),
@@ -843,7 +852,7 @@ export class ServiceOrderRepository {
             action: 'CREATE',
             orderId: serviceOrder.id,
             detail: 'Ordem de serviço criada',
-            userId,
+            username: actor.name,
           },
         });
       });

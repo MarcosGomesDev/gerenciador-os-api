@@ -7,6 +7,6 @@ export class ListHistoric {
     public readonly orderId: string,
     public readonly detail: string,
     public readonly createdAt: Date,
-    public readonly user?: string,
+    public readonly username?: string,
   ) {}
 }

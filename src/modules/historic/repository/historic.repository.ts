@@ -27,11 +27,9 @@ export class HistoricRepository {
             },
           },
           {
-            user: {
-              name: {
-                contains: searchTerm,
-                mode: 'insensitive' as const,
-              },
+            username: {
+              contains: searchTerm,
+              mode: 'insensitive' as const,
             },
           },
         ],
@@ -44,11 +42,9 @@ export class HistoricRepository {
     action: true,
     detail: true,
     createdAt: true,
+    username: true,
     order: {
       select: { orderId: true },
-    },
-    user: {
-      select: { name: true },
     },
   } as const;
 
@@ -85,7 +81,7 @@ export class HistoricRepository {
               item.order.orderId,
               item.detail,
               item.createdAt,
-              item.user?.name,
+              item.username ?? undefined,
             ),
         ),
         total,
@@ -132,7 +128,7 @@ export class HistoricRepository {
             item.order.orderId,
             item.detail,
             item.createdAt,
-            item.user?.name,
+            item.username ?? undefined,
           ),
       );
     } catch (error) {

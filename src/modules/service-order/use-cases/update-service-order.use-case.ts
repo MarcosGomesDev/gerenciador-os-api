@@ -10,7 +10,11 @@ export class UpdateServiceOrderUseCase {
     private readonly createServiceOrderStatusUseCase: CreateServiceOrderStatusUseCase,
   ) {}
 
-  async execute(id: string, dto: UpdateServiceOrderDTO): Promise<void> {
+  async execute(
+    id: string,
+    dto: UpdateServiceOrderDTO,
+    actorUserId: string,
+  ): Promise<void> {
     await this.findServiceOrderByIdUseCase.execute(id);
 
     await this.createServiceOrderStatusUseCase.execute(
@@ -24,6 +28,7 @@ export class UpdateServiceOrderUseCase {
         labDescription: dto.labDescription,
         labTechnicianId: dto.labTechnicianId,
       },
+      actorUserId,
     );
   }
 }

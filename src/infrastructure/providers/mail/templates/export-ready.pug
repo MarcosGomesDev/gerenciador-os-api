@@ -1,18 +1,32 @@
 doctype html
 html
   head
+    meta(charset="utf-8")
     title Exportação concluída
-  body(style="font-family: Arial, sans-serif; padding: 20px;")
-    h1(style="color: #333;") Seu arquivo está pronto
-    p Olá#{name ? ' ' + name : ''},
-    p A exportação solicitada foi concluída e o arquivo CSV segue anexado a este e-mail.
-    if fileName
-      p
-        strong Arquivo:
-        |  #{fileName}
-    if rows
-      p
-        strong Linhas:
-        |  #{rows}
-    p(style="color: #666; font-size: 14px;") Se você não solicitou esta exportação, ignore esta mensagem.
-
+  body(style="margin:0;padding:0;background:#ffffff;")
+    div(style="font-family:Inter,Arial,sans-serif;max-width:520px;margin:0 auto;color:#111827")
+      div(style="background:#0052A3;color:#fff;padding:18px 24px;border-radius:12px 12px 0 0")
+        table(role="presentation" cellpadding="0" cellspacing="0" border="0")
+          tr
+            if hasBrasao
+              td(style="padding-right:12px;vertical-align:middle")
+                img(src="cid:brasao" width="46" height="46" alt="Brasão de Belford Roxo" style="display:block")
+            td(style="vertical-align:middle")
+              strong(style="font-size:16px") Sistema de Ordem de Serviço
+              br
+              span(style="font-size:12px;opacity:.85") Prefeitura Municipal de Belford Roxo
+      div(style="border:1px solid #E5E7EB;border-top:0;padding:24px;border-radius:0 0 12px 12px")
+        h1(style="font-size:18px;margin:0 0 12px")
+          | Olá#{name ? ', ' + name : ''}
+        p(style="font-size:14px;line-height:1.6;margin:0 0 12px")
+          | A exportação solicitada foi concluída e o arquivo CSV segue anexado a este e-mail.
+        if fileName
+          p(style="font-size:14px;line-height:1.6;margin:0 0 8px")
+            strong Arquivo:
+            |  #{fileName}
+        if rows
+          p(style="font-size:14px;line-height:1.6;margin:0 0 8px")
+            strong Linhas:
+            |  #{rows}
+        p(style="font-size:12px;color:#6B7280;margin-top:24px")
+          | Se você não solicitou esta exportação, ignore esta mensagem.

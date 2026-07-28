@@ -1,22 +1,41 @@
 doctype html
 html
   head
+    meta(charset="utf-8")
     title Bem-vindo
-  body(style="font-family: Arial, sans-serif; padding: 20px;")
-    h1(style="color: #333;") Bem-vindo!
-    p Olá#{name ? ' ' + name : ''},
-    p Sua conta foi criada com sucesso. Para ativá-la, faça login no sistema.
-    if frontendUrl
-      p
-        a(href=frontendUrl style="color: #0066cc;") Acessar o sistema
-    p
-      strong Para acessar, utilize:
-    ul(style="list-style: none; padding-left: 0;")
-      li
-        strong Login:
-        |  seu CPF
-      li
-        strong Senha:
-        |  seu CPF
-    p Na primeira vez que entrar, recomendamos que você altere sua senha por uma de sua preferência.
-    p Se você não solicitou a criação desta conta, entre em contato com o suporte.
+  body(style="margin:0;padding:0;background:#ffffff;")
+    div(style="font-family:Inter,Arial,sans-serif;max-width:520px;margin:0 auto;color:#111827")
+      div(style="background:#0052A3;color:#fff;padding:18px 24px;border-radius:12px 12px 0 0")
+        table(role="presentation" cellpadding="0" cellspacing="0" border="0")
+          tr
+            if hasBrasao
+              td(style="padding-right:12px;vertical-align:middle")
+                img(src="cid:brasao" width="46" height="46" alt="Brasão de Belford Roxo" style="display:block")
+            td(style="vertical-align:middle")
+              strong(style="font-size:16px") Sistema de Ordem de Serviço
+              br
+              span(style="font-size:12px;opacity:.85") Prefeitura Municipal de Belford Roxo
+      div(style="border:1px solid #E5E7EB;border-top:0;padding:24px;border-radius:0 0 12px 12px")
+        h1(style="font-size:18px;margin:0 0 12px")
+          | Olá#{name ? ', ' + name : ''}
+        p(style="font-size:14px;line-height:1.6;margin:0 0 12px")
+          | Sua conta foi criada com sucesso. Para ativá-la, faça login no sistema.
+        if frontendUrl
+          p(style="margin:20px 0")
+            a(
+              href=frontendUrl
+              style="background:#0066CC;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:600;display:inline-block"
+            ) Acessar o sistema
+        p(style="font-size:14px;line-height:1.6;margin:16px 0 8px")
+          strong Para acessar, utilize:
+        ul(style="list-style:none;padding-left:0;margin:0 0 12px;font-size:14px;line-height:1.8")
+          li
+            strong Login:
+            |  seu CPF
+          li
+            strong Senha:
+            |  seu CPF
+        p(style="font-size:14px;line-height:1.6;margin:0 0 12px")
+          | Na primeira vez que entrar, recomendamos que você altere sua senha por uma de sua preferência.
+        p(style="font-size:12px;color:#6B7280;margin-top:24px")
+          | Se você não solicitou a criação desta conta, entre em contato com o suporte.

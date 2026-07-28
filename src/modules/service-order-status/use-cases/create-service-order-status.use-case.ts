@@ -15,7 +15,12 @@ export class CreateServiceOrderStatusUseCase {
   async execute(
     dto: CreateServiceOrderStatusDTO,
     orderUpdates?: ServiceOrderLabUpdates,
+    actorUserId?: string,
   ) {
-    return await this.serviceOrderStatusRepository.create(dto, orderUpdates);
+    return await this.serviceOrderStatusRepository.create(
+      dto,
+      orderUpdates,
+      actorUserId,
+    );
   }
 }

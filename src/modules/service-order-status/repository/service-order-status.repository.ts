@@ -21,6 +21,7 @@ export class ServiceOrderStatusRepository {
   async create(
     dto: CreateServiceOrderStatusDTO,
     orderUpdates?: ServiceOrderLabUpdates,
+    actorUserId?: string,
   ): Promise<void> {
     try {
       await this.prisma.$transaction(async (tx) => {
@@ -37,6 +38,23 @@ export class ServiceOrderStatusRepository {
           throw new NotFoundException(
             dto.serviceOrderId + ' ordem de serviço não encontrada.',
           );
+        }
+
+        let username: string | undefined;
+
+        if (actorUserId) {
+          const actor = await tx.user.findUnique({
+            where: { id: actorUserId },
+            select: { name: true },
+          });
+
+          if (!actor) {
+            throw new NotFoundException(
+              actorUserId + ' usuário não encontrado.',
+            );
+          }
+
+          username = actor.name;
         }
 
         await tx.serviceOrderStatus.create({
@@ -88,6 +106,13 @@ export class ServiceOrderStatusRepository {
           serviceOrderData.labExitAt = new Date();
         }
 
+        if (dto.status === 'CLOSED' && actorUserId) {
+          serviceOrderData.closedBy = {
+            connect: { id: actorUserId },
+          };
+          serviceOrderData.closedAt = new Date();
+        }
+
         await tx.serviceOrder.update({
           where: {
             id: dto.serviceOrderId,
@@ -111,7 +136,7 @@ export class ServiceOrderStatusRepository {
                 : dto.technicianId && !dto.note
                   ? 'Ordem de serviço atribuída'
                   : 'Ordem de serviço atualizada',
-            userId: dto.technicianId,
+            username,
           },
         });
       });
@@ -120,6 +145,7 @@ export class ServiceOrderStatusRepository {
         serviceOrderId: dto.serviceOrderId,
         status: dto.status,
         technicianId: dto.technicianId,
+        actorUserId,
       });
     } catch (error) {
       if (
@@ -145,12 +171,14 @@ export class ServiceOrderStatusRepository {
             serviceOrderId: dto.serviceOrderId,
             technicianId: dto.technicianId,
             labTechnicianId: orderUpdates?.labTechnicianId,
+            actorUserId,
           },
         );
 
         if (orderUpdates?.labTechnicianId) {
           throw new NotFoundException(
-            orderUpdates.labTechnicianId + ' técnico de laboratório não encontrado.',
+            orderUpdates.labTechnicianId +
+              ' técnico de laboratório não encontrado.',
           );
         }
 

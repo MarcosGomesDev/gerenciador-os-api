@@ -177,10 +177,12 @@ export class ServiceOrderController {
     @Param('id') id: string,
     @Body()
     updateServiceOrderDTO: UpdateServiceOrderDTO,
+    @UserId() userId: string,
   ) {
     return await this.updateServiceOrderUseCase.execute(
       id,
       updateServiceOrderDTO,
+      userId,
     );
   }
 }

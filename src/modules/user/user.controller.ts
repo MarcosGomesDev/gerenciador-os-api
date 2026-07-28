@@ -9,14 +9,18 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { UpdateUserDTO, UpdateUserStatusDTO } from './dto';
+import {
+  DeleteUserDTO,
+  FindUsersByRoleFilters,
+  UpdateUserDTO,
+  UpdateUserStatusDTO,
+} from './dto';
 import {
   DeleteUserUseCase,
-  FindAllDeletedUsersUseCase,
   FindAllTechniciansUseCase,
   FindAllUsersUseCase,
   FindUserByIdUseCase,
-  RestoreUserUseCase,
+  FindUsersByRoleUseCase,
   UpdateUserStatusUseCase,
   UpdateUserUseCase,
 } from './use-cases';
@@ -27,13 +31,12 @@ import {
 export class UserController {
   constructor(
     private readonly findAllUsersUseCase: FindAllUsersUseCase,
-    private readonly findAllDeletedUsersUseCase: FindAllDeletedUsersUseCase,
     private readonly findAllTechniciansUseCase: FindAllTechniciansUseCase,
+    private readonly findUsersByRoleUseCase: FindUsersByRoleUseCase,
     private readonly findUserByIdUseCase: FindUserByIdUseCase,
     private readonly updateUserUseCase: UpdateUserUseCase,
     private readonly updateUserStatusUseCase: UpdateUserStatusUseCase,
     private readonly deleteUserUseCase: DeleteUserUseCase,
-    private readonly restoreUserUseCase: RestoreUserUseCase,
   ) {}
 
   @Roles('ADMIN')
@@ -65,17 +68,9 @@ export class UserController {
   }
 
   @Roles('ADMIN')
-  @Get('/deleted')
-  async getDeletedList(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('searchTerm') searchTerm?: string,
-  ) {
-    return await this.findAllDeletedUsersUseCase.execute({
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
-      searchTerm,
-    });
+  @Get('/by-role')
+  async findByRole(@Query() filters: FindUsersByRoleFilters) {
+    return await this.findUsersByRoleUseCase.execute(filters);
   }
 
   @Roles('ADMIN')
@@ -108,14 +103,8 @@ export class UserController {
   }
 
   @Roles('ADMIN')
-  @Patch('/:id/restore')
-  async restore(@Param('id') id: string) {
-    return await this.restoreUserUseCase.execute(id);
-  }
-
-  @Roles('ADMIN')
   @Delete('/:id')
-  async delete(@Param('id') id: string) {
-    return await this.deleteUserUseCase.execute(id);
+  async delete(@Param('id') id: string, @Body() dto: DeleteUserDTO) {
+    return await this.deleteUserUseCase.execute(id, dto);
   }
 }

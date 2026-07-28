@@ -60,7 +60,7 @@ export class HistoricExportProcessor {
         { header: 'Ação', value: (r) => r.action },
         { header: 'OS', value: (r) => r.orderId },
         { header: 'Detalhe', value: (r) => r.detail },
-        { header: 'Usuário', value: (r) => r.user },
+        { header: 'Usuário', value: (r) => r.username },
         { header: 'Criado em', value: (r) => r.createdAt?.toISOString?.() },
       ],
       all,

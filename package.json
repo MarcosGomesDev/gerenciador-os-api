@@ -16,7 +16,7 @@
     "seed": "node prisma/seed.js"
   },
   "scripts": {
-    "build": "prisma generate && nest build",
+    "build": "npx prisma generate && npx prisma migrate deploy && npm run backfill:historic-username && nest build",
     "build:prod": "prisma generate && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -34,7 +34,8 @@
     "prisma:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "node prisma/seed.js",
-    "fix:closed-status-order": "ts-node prisma/fix-closed-status-order.ts"
+    "fix:closed-status-order": "ts-node prisma/fix-closed-status-order.ts",
+    "backfill:historic-username": "node prisma/backfill-historic-username.js"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",

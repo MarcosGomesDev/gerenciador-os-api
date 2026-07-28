@@ -31,7 +31,6 @@ model User {
   location             Location?            @relation(fields: [locationId], references: [id])
   serviceOrders        ServiceOrder[]
   serviceOrderStatuses ServiceOrderStatus[]
-  historics            Historic[]
   patrimoniesCreated   Patrimony[]          @relation("PatrimonyCreatedBy")
   patrimoniesUpdated   Patrimony[]          @relation("PatrimonyUpdatedBy")
   serviceOrdersClosed  ServiceOrder[]       @relation("ServiceOrderClosedBy")
@@ -228,8 +227,7 @@ model Historic {
   order     ServiceOrder   @relation(fields: [orderId], references: [id])
   orderId   String         @map("order_id")
   createdAt DateTime       @default(now()) @map("created_at")
-  user      User?          @relation(fields: [userId], references: [id])
-  userId    String?        @map("user_id")
+  username  String?        @map("username")
 
   @@map("historics")
 }
